@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Search, MapPin, Star, Leaf, Filter, ChevronDown, Check, X,
+  Search, MapPin, Star, Filter, ChevronDown, Check, X,
   Heart, Phone, Users, ChevronRight
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';

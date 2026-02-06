@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase, isSupabaseConfigured, dbEspecieToApp } from '../lib/supabase';
 import { especies as mockEspecies } from '../data/especies';
 
