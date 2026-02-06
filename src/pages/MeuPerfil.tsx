@@ -195,9 +195,13 @@ export function MeuPerfil() {
 
   const handleSave = async () => {
     const updates = { ...editData };
-    // Sincronizar whatsapp com telefone se não preenchido
-    if (updates.telefone && !updates.whatsapp) {
-      updates.whatsapp = updates.telefone.replace(/\D/g, '');
+    // Sincronizar whatsapp com telefone - garantir formato correto com 55 (Brasil)
+    if (updates.telefone) {
+      let clean = updates.telefone.replace(/\D/g, '');
+      if (clean && !clean.startsWith('55')) {
+        clean = '55' + clean;
+      }
+      updates.whatsapp = clean;
     }
 
     const { error } = await updateCriador(criador.id, updates);

@@ -1,10 +1,13 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import { Icon, LatLngBounds } from 'leaflet';
-import { Search, Filter, X, MapPin, Phone, Star, ChevronDown, Check } from 'lucide-react';
+import { Search, Filter, X, MapPin, Phone, Star, ChevronDown, Check, Heart, User } from 'lucide-react';
 import { criadores as mockCriadores } from '../data/criadores';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { useCriadores } from '../hooks/useCriadores';
+import { useAuth } from '../contexts/AuthContext';
+import { useFavoritos } from '../hooks/useWhatsApp';
 import { especies, buscarEspecies, getTodasEspeciesParaFiltro } from '../data/especies';
 import 'leaflet/dist/leaflet.css';
 
@@ -46,6 +49,13 @@ export function Mapa() {
   const [selectedStatus, setSelectedStatus] = useState<('venda' | 'troca' | 'informacao')[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
+  const { isFavorito, adicionarFavorito, removerFavorito, carregarFavoritos } = useFavoritos();
+
+  // Carregar favoritos do usuário
+  useEffect(() => {
+    if (user?.id) carregarFavoritos(user.id);
+  }, [user?.id, carregarFavoritos]);
 
   // Buscar criadores via hook (usa Supabase se configurado, senão mock)
   const { criadores: criadoresData, isLoading } = useCriadores({
@@ -453,17 +463,41 @@ export function Mapa() {
                             </span>
                           ))}
                         </div>
-                        <a
-                          href={`https://wa.me/${criador.whatsapp}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 mt-3 px-3 py-1.5 rounded-lg 
-                                   bg-green-500 text-white text-sm hover:bg-green-600 
-                                   transition-colors duration-300"
-                        >
-                          <Phone className="w-3.5 h-3.5" />
-                          Contato
-                        </a>
+                        <div className="flex items-center gap-2 mt-3">
+                          <Link
+                            to={`/perfil/${criador.id}`}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+                                     bg-[var(--asf-green)] text-white text-sm hover:bg-[var(--asf-green-dark)]
+                                     transition-colors duration-300"
+                          >
+                            <User className="w-3.5 h-3.5" />
+                            Perfil
+                          </Link>
+                          <a
+                            href={`https://wa.me/${criador.whatsapp}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+                                     bg-green-500 text-white text-sm hover:bg-green-600
+                                     transition-colors duration-300"
+                          >
+                            <Phone className="w-3.5 h-3.5" />
+                            Contato
+                          </a>
+                          {user && (
+                            <button
+                              onClick={() => isFavorito(criador.id) ? removerFavorito(criador.id, user.id) : adicionarFavorito(criador.id, user.id)}
+                              className={`p-1.5 rounded-lg transition-colors duration-300 ${
+                                isFavorito(criador.id)
+                                  ? 'bg-red-100 text-red-500'
+                                  : 'bg-gray-100 text-gray-400 hover:text-red-500 hover:bg-red-50'
+                              }`}
+                              title={isFavorito(criador.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+                            >
+                              <Heart className={`w-4 h-4 ${isFavorito(criador.id) ? 'fill-current' : ''}`} />
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -541,17 +575,42 @@ export function Mapa() {
                         </span>
                       ))}
                     </div>
-                    <a
-                      href={`https://wa.me/${criador.whatsapp}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 
-                               rounded-lg bg-green-500 text-white text-sm hover:bg-green-600 
-                               transition-colors duration-300"
-                    >
-                      <Phone className="w-3.5 h-3.5" />
-                      WhatsApp
-                    </a>
+                    <div className="flex gap-2">
+                      <Link
+                        to={`/perfil/${criador.id}`}
+                        className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2
+                                 rounded-lg bg-[var(--asf-green)] text-white text-sm hover:bg-[var(--asf-green-dark)]
+                                 transition-colors duration-300"
+                      >
+                        <User className="w-3.5 h-3.5" />
+                        Perfil
+                      </Link>
+                      <a
+                        href={`https://wa.me/${criador.whatsapp}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2
+                                 rounded-lg bg-green-500 text-white text-sm hover:bg-green-600
+                                 transition-colors duration-300"
+                      >
+                        <Phone className="w-3.5 h-3.5" />
+                        WhatsApp
+                      </a>
+                    </div>
+                    {user && (
+                      <button
+                        onClick={() => isFavorito(criador.id) ? removerFavorito(criador.id, user.id) : adicionarFavorito(criador.id, user.id)}
+                        className={`w-full mt-2 inline-flex items-center justify-center gap-1.5 px-3 py-1.5
+                                 rounded-lg text-sm transition-colors duration-300 ${
+                          isFavorito(criador.id)
+                            ? 'bg-red-100 text-red-600'
+                            : 'bg-gray-100 text-gray-500 hover:bg-red-50 hover:text-red-500'
+                        }`}
+                      >
+                        <Heart className={`w-3.5 h-3.5 ${isFavorito(criador.id) ? 'fill-current' : ''}`} />
+                        {isFavorito(criador.id) ? 'Salvo' : 'Favoritar'}
+                      </button>
+                    )}
                   </div>
                 </Popup>
               </Marker>

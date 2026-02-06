@@ -12,95 +12,115 @@ interface UseEspeciesOptions {
 
 export function useEspecies(options: UseEspeciesOptions = {}) {
   const [especies, setEspecies] = useState(mockEspecies);
+  const [totalCatalogadas, setTotalCatalogadas] = useState(mockEspecies.length);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetchEspecies = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-
-    // Modo offline - usar dados mockados
-    if (!isSupabaseConfigured()) {
-      let filtered = [...mockEspecies];
-
-      // Aplicar filtros
-      if (options.biomas?.length) {
-        filtered = filtered.filter(e => e.biomas.some(b => options.biomas?.includes(b)));
-      }
-
-      if (options.tamanhos?.length) {
-        filtered = filtered.filter(e => options.tamanhos?.includes(e.tamanho));
-      }
-
-      if (options.dificuldades?.length) {
-        filtered = filtered.filter(e => options.dificuldades?.includes(e.manejo.dificuldade));
-      }
-
-      if (options.conservacao?.length) {
-        filtered = filtered.filter(e => options.conservacao?.includes(e.conservacao.status));
-      }
-
-      if (options.query) {
-        const q = options.query.toLowerCase();
-        filtered = filtered.filter(e =>
-          e.nomeCientifico.toLowerCase().includes(q) ||
-          e.nomesPopulares.some(n => n.toLowerCase().includes(q))
-        );
-      }
-
-      setEspecies(filtered);
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      let query = supabase.from('especies').select('*');
-
-      // Filtro por bioma
-      if (options.biomas?.length) {
-        query = query.overlaps('biomas', options.biomas);
-      }
-
-      // Filtro por tamanho
-      if (options.tamanhos?.length) {
-        query = query.in('tamanho', options.tamanhos);
-      }
-
-      // Filtro por dificuldade
-      if (options.dificuldades?.length) {
-        query = query.in('manejo_dificuldade', options.dificuldades);
-      }
-
-      // Filtro por conservação
-      if (options.conservacao?.length) {
-        query = query.in('conservacao_status', options.conservacao);
-      }
-
-      // Busca por texto (nome científico ou popular)
-      if (options.query) {
-        const searchTerm = options.query.toLowerCase();
-        query = query.or(`nome_cientifico.ilike.%${searchTerm}%,nomes_populares.cs.{${searchTerm}}`);
-      }
-
-      const { data, error: queryError } = await query.order('nome_cientifico');
-
-      if (queryError) throw queryError;
-      setEspecies((data || []).map(dbEspecieToApp));
-    } catch (err) {
-      setError(err as Error);
-      console.error('Erro ao buscar espécies:', err);
-      // Fallback para dados mockados
-      setEspecies(mockEspecies);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [options]);
+  // Serializar opções para evitar re-renders desnecessários
+  const biomasKey = JSON.stringify(options.biomas || []);
+  const tamanhosKey = JSON.stringify(options.tamanhos || []);
+  const dificuldadesKey = JSON.stringify(options.dificuldades || []);
+  const conservacaoKey = JSON.stringify(options.conservacao || []);
+  const queryKey = options.query || '';
 
   useEffect(() => {
-    fetchEspecies();
-  }, [fetchEspecies]);
+    let cancelled = false;
 
-  return { especies, isLoading, error, refetch: fetchEspecies };
+    const fetchEspecies = async () => {
+      setIsLoading(true);
+      setError(null);
+
+      const biomas = options.biomas;
+      const tamanhos = options.tamanhos;
+      const dificuldades = options.dificuldades;
+      const conservacao = options.conservacao;
+      const query = options.query;
+
+      // Modo offline - usar dados mockados
+      if (!isSupabaseConfigured()) {
+        let filtered = [...mockEspecies];
+
+        if (biomas?.length) {
+          filtered = filtered.filter(e => e.biomas.some(b => biomas.includes(b)));
+        }
+        if (tamanhos?.length) {
+          filtered = filtered.filter(e => tamanhos.includes(e.tamanho));
+        }
+        if (dificuldades?.length) {
+          filtered = filtered.filter(e => dificuldades.includes(e.manejo.dificuldade));
+        }
+        if (conservacao?.length) {
+          filtered = filtered.filter(e => conservacao.includes(e.conservacao.status));
+        }
+        if (query) {
+          const q = query.toLowerCase();
+          filtered = filtered.filter(e =>
+            e.nomeCientifico.toLowerCase().includes(q) ||
+            e.nomesPopulares.some(n => n.toLowerCase().includes(q))
+          );
+        }
+
+        if (!cancelled) {
+          setEspecies(filtered);
+          setTotalCatalogadas(mockEspecies.length);
+          setIsLoading(false);
+        }
+        return;
+      }
+
+      try {
+        let q = supabase.from('especies').select('*');
+
+        if (biomas?.length) {
+          q = q.overlaps('biomas', biomas);
+        }
+        if (tamanhos?.length) {
+          q = q.in('tamanho', tamanhos);
+        }
+        if (dificuldades?.length) {
+          q = q.in('manejo_dificuldade', dificuldades);
+        }
+        if (conservacao?.length) {
+          q = q.in('conservacao_status', conservacao);
+        }
+        if (query) {
+          const searchTerm = query.toLowerCase();
+          q = q.or(`nome_cientifico.ilike.%${searchTerm}%,nomes_populares.cs.{${searchTerm}}`);
+        }
+
+        const { data, error: queryError } = await q.order('nome_cientifico');
+
+        if (queryError) throw queryError;
+        if (!cancelled) {
+          const mapped = (data || []).map(dbEspecieToApp);
+          setEspecies(mapped);
+          // Só atualizar o total se não tem filtro (primeiro fetch)
+          const hasFilters = biomas?.length || tamanhos?.length || dificuldades?.length || conservacao?.length || query;
+          if (!hasFilters) {
+            setTotalCatalogadas(mapped.length);
+          }
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err as Error);
+          console.error('Erro ao buscar espécies:', err);
+          setEspecies(mockEspecies);
+          setTotalCatalogadas(mockEspecies.length);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchEspecies();
+
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [biomasKey, tamanhosKey, dificuldadesKey, conservacaoKey, queryKey]);
+
+  return { especies, totalCatalogadas, isLoading, error };
 }
 
 export function useEspecie(especieId: string | null) {

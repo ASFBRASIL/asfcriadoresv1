@@ -227,12 +227,12 @@ export function Sobre() {
               Junte-se a mais de 500 criadores de abelhas sem ferrão em todo o Brasil.
             </p>
             <Link
-              to="/mapa"
-              className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-[var(--asf-yellow)] 
-                       text-[var(--asf-gray-dark)] font-semibold hover:bg-[var(--asf-yellow-light)] 
+              to="/sou-criador"
+              className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-[var(--asf-yellow)]
+                       text-[var(--asf-gray-dark)] font-semibold hover:bg-[var(--asf-yellow-light)]
                        transition-all duration-300 hover:-translate-y-0.5"
             >
-              Explorar o mapa
+              Cadastre-se como criador
               <ArrowRight className="w-5 h-5" />
             </Link>
           </div>

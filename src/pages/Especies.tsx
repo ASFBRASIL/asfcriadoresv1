@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Filter, Leaf, Droplets, Sun, MapPin, Beaker, Info, ChevronRight, Star, BookOpen } from 'lucide-react';
-import { especies as mockEspecies, buscarEspecies, type Especie } from '../data/especies';
+import { type Especie } from '../data/especies';
 import { useEspecies } from '../hooks/useEspecies';
 import { usePagination, PaginationControls } from '../hooks/usePagination';
 import { useSEO } from '../hooks/useSEO';
@@ -47,8 +47,8 @@ export function Especies() {
   const [selectedConservacao, setSelectedConservacao] = useState<string[]>([]);
   const [selectedEspecie, setSelectedEspecie] = useState<Especie | null>(null);
 
-  // Buscar espécies do Supabase (com fallback para mock)
-  const { especies: especiesData } = useEspecies({
+  // Buscar espécies do Supabase (o hook já aplica filtros server-side ou client-side)
+  const { especies: filteredEspecies, totalCatalogadas } = useEspecies({
     biomas: selectedBiomas.length > 0 ? selectedBiomas : undefined,
     tamanhos: selectedTamanhos.length > 0 ? selectedTamanhos : undefined,
     dificuldades: selectedDificuldades.length > 0 ? selectedDificuldades : undefined,
@@ -56,35 +56,7 @@ export function Especies() {
     query: searchTerm.trim() || undefined,
   });
 
-  const especies = especiesData.length > 0 ? especiesData : mockEspecies;
-
   useSEO({ title: 'Catálogo de Espécies', description: 'Explore o catálogo completo de espécies de abelhas sem ferrão do Brasil. Informações sobre manejo, mel, conservação e criadores.' });
-
-  // Filter species (client-side filtering for mock data, Supabase handles server-side)
-  const filteredEspecies = useMemo(() => {
-    let result = especies as Especie[];
-
-    // When using mock data, apply client-side filters
-    if (especiesData.length === 0) {
-      if (searchTerm.trim()) {
-        result = buscarEspecies(searchTerm);
-      }
-      if (selectedBiomas.length > 0) {
-        result = result.filter(e => e.biomas.some(b => selectedBiomas.includes(b)));
-      }
-      if (selectedTamanhos.length > 0) {
-        result = result.filter(e => selectedTamanhos.includes(e.tamanho));
-      }
-      if (selectedDificuldades.length > 0) {
-        result = result.filter(e => selectedDificuldades.includes(e.manejo.dificuldade));
-      }
-      if (selectedConservacao.length > 0) {
-        result = result.filter(e => selectedConservacao.includes(e.conservacao.status));
-      }
-    }
-
-    return result;
-  }, [especies, especiesData.length, searchTerm, selectedBiomas, selectedTamanhos, selectedDificuldades, selectedConservacao]);
 
   // Paginação
   const pagination = usePagination(filteredEspecies, 9);
@@ -156,7 +128,7 @@ export function Especies() {
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-6 lg:gap-10">
               <div>
-                <div className="text-2xl lg:text-3xl font-bold">{filteredEspecies.length}</div>
+                <div className="text-2xl lg:text-3xl font-bold">{totalCatalogadas}</div>
                 <div className="text-white/70 text-sm">espécies catalogadas</div>
               </div>
               <div className="hidden sm:block w-px h-10 bg-white/20" />

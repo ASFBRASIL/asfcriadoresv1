@@ -4,6 +4,7 @@ import { Menu, X, LogOut, User, Heart, Bell, Search } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotificacoes } from '../hooks/useNotificacoes';
 import { buscarEspecies } from '../data/especies';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { criadores as mockCriadores } from '../data/criadores';
 
 const navLinks = [
@@ -23,14 +24,40 @@ export function Header() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const searchRef = useRef<HTMLDivElement>(null);
+  const [criadoresResults, setCriadoresResults] = useState<any[]>([]);
+
+  // Buscar criadores no Supabase quando query muda
+  useEffect(() => {
+    if (searchQuery.trim().length < 2) {
+      setCriadoresResults([]);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      if (isSupabaseConfigured()) {
+        const { data } = await supabase
+          .from('criadores')
+          .select('id, nome, cidade, estado')
+          .or(`nome.ilike.%${searchQuery}%,cidade.ilike.%${searchQuery}%`)
+          .limit(4);
+        setCriadoresResults(data || []);
+      } else {
+        setCriadoresResults(
+          mockCriadores.filter(c =>
+            c.nome.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            c.cidade.toLowerCase().includes(searchQuery.toLowerCase())
+          ).slice(0, 4)
+        );
+      }
+    }, 300); // debounce 300ms
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // Resultados de busca
   const searchResults = searchQuery.trim().length >= 2 ? {
     especies: buscarEspecies(searchQuery).slice(0, 4),
-    criadores: mockCriadores.filter(c =>
-      c.nome.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.cidade.toLowerCase().includes(searchQuery.toLowerCase())
-    ).slice(0, 4),
+    criadores: criadoresResults,
   } : { especies: [], criadores: [] };
 
   const hasResults = searchResults.especies.length > 0 || searchResults.criadores.length > 0;
