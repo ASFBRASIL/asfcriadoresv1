@@ -112,7 +112,7 @@ function EspecieManager({ criadorId, currentEspecies, onClose, onUpdate }: {
 
 // ======================== MAIN COMPONENT ========================
 export function MeuPerfil() {
-  const { user, criador, signOut, refreshCriador, isAdmin } = useAuth();
+  const { user, criador, signOut, refreshCriador, isAdmin, isCriadorLoading } = useAuth();
   const { updateCriador, isLoading: isUpdating } = useUpdateCriador();
   const { uploadAvatar, isLoading: isUploading } = useUploadAvatar();
   const navigate = useNavigate();
@@ -167,7 +167,61 @@ export function MeuPerfil() {
     }
   }, [criador, isEditing]);
 
-  if (!user || !criador) {
+  if (!user) {
+    return (
+      <div className="min-h-screen pt-24 flex items-center justify-center bg-[var(--asf-gray-light)]">
+        <div className="text-center">
+          <div className="animate-spin w-10 h-10 border-4 border-[var(--asf-green)] border-t-transparent rounded-full mx-auto mb-4" />
+          <p className="text-[var(--asf-gray-medium)]">Carregando perfil...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!criador && !isCriadorLoading) {
+    return (
+      <div className="min-h-screen pt-24 flex items-center justify-center bg-[var(--asf-gray-light)]">
+        <div className="text-center max-w-md mx-auto px-4">
+          <div className="w-16 h-16 rounded-2xl bg-[var(--asf-yellow)]/20 flex items-center justify-center mx-auto mb-4">
+            <User className="w-8 h-8 text-[var(--asf-yellow-dark)]" />
+          </div>
+          <h2 className="text-xl font-poppins font-bold text-[var(--asf-gray-dark)] mb-2">Perfil não encontrado</h2>
+          <p className="text-[var(--asf-gray-medium)] mb-6">
+            Seu perfil de criador ainda não foi criado. Isso pode acontecer se houve um erro durante o cadastro.
+          </p>
+          <button
+            onClick={async () => {
+              if (isSupabaseConfigured() && user) {
+                const meta = user.user_metadata || {};
+                await supabase.from('criadores').insert({
+                  user_id: user.id,
+                  nome: meta.nome || meta.full_name || user.email?.split('@')[0] || 'Criador',
+                  email: user.email || '',
+                  telefone: meta.telefone || '',
+                  whatsapp: meta.telefone ? (meta.telefone.replace(/\D/g, '').startsWith('55') ? meta.telefone.replace(/\D/g, '') : '55' + meta.telefone.replace(/\D/g, '')) : '',
+                  cidade: meta.cidade || '',
+                  estado: meta.estado || '',
+                  status: ['informacao'],
+                  latitude: 0,
+                  longitude: 0,
+                  verificado: false,
+                  avaliacao_media: 0,
+                  total_avaliacoes: 0,
+                  role: 'criador',
+                });
+                await refreshCriador();
+              }
+            }}
+            className="px-6 py-3 rounded-xl bg-[var(--asf-green)] text-white font-medium hover:bg-[var(--asf-green-dark)] transition-colors"
+          >
+            Criar meu perfil
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!criador) {
     return (
       <div className="min-h-screen pt-24 flex items-center justify-center bg-[var(--asf-gray-light)]">
         <div className="text-center">

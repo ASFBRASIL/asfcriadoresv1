@@ -202,7 +202,7 @@ export function Header() {
                   <Heart className="w-4.5 h-4.5" />
                 </Link>
                 <div className="relative">
-                  <Link to="/favoritos" className="p-2 rounded-xl text-[var(--asf-gray-medium)] hover:text-[var(--asf-green)] hover:bg-[var(--asf-green)]/10 transition-all" title="Notificações">
+                  <Link to="/notificacoes" className="p-2 rounded-xl text-[var(--asf-gray-medium)] hover:text-[var(--asf-green)] hover:bg-[var(--asf-green)]/10 transition-all" title="Notificações">
                     <Bell className="w-4.5 h-4.5" />
                     {naoLidas > 0 && <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1">{naoLidas > 9 ? '9+' : naoLidas}</span>}
                   </Link>
