@@ -246,22 +246,84 @@ export function Header() {
             )}
           </div>
 
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="lg:hidden w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center
-                     text-[var(--asf-gray-dark)] hover:bg-gray-200 transition-colors duration-300"
-          >
-            {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
+          {/* Mobile Search + Menu Buttons */}
+          <div className="flex items-center gap-2 lg:hidden">
+            <button
+              onClick={() => { setSearchOpen(!searchOpen); setIsMobileMenuOpen(false); }}
+              className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center
+                       text-[var(--asf-gray-dark)] hover:bg-gray-200 transition-colors duration-300"
+            >
+              <Search className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => { setIsMobileMenuOpen(!isMobileMenuOpen); setSearchOpen(false); }}
+              className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center
+                       text-[var(--asf-gray-dark)] hover:bg-gray-200 transition-colors duration-300"
+            >
+              {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
         </div>
       </div>
 
+      {/* Mobile Search Bar */}
+      {searchOpen && (
+        <div className="lg:hidden absolute top-full left-0 right-0 bg-white shadow-lg border-t border-gray-100 z-50" ref={searchRef}>
+          <div className="section-padding py-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input type="text" autoFocus value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Escape') { setSearchOpen(false); setSearchQuery(''); } if (e.key === 'Enter' && searchQuery.trim()) goSearch(`/mapa?q=${encodeURIComponent(searchQuery)}`); }}
+                placeholder="Buscar criadores, espécies..."
+                className="w-full pl-10 pr-10 py-3 rounded-xl border border-gray-200 bg-white focus:border-[var(--asf-green)] focus:ring-2 focus:ring-[var(--asf-green)]/20 outline-none text-sm" />
+              <button onClick={() => { setSearchOpen(false); setSearchQuery(''); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            {/* Mobile search results */}
+            {searchQuery.trim().length >= 2 && (
+              <div className="mt-2 bg-white rounded-xl border border-gray-100 max-h-64 overflow-y-auto">
+                {hasResults ? (
+                  <div>
+                    {searchResults.especies.length > 0 && (
+                      <div className="p-2">
+                        <p className="text-xs font-medium text-[var(--asf-gray-medium)] px-2 py-1">ESPÉCIES</p>
+                        {searchResults.especies.map(e => (
+                          <button key={e.id} onClick={() => goSearch(`/especie/${e.id}`)}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 text-left">
+                            <span className="text-sm">🐝</span>
+                            <div className="min-w-0 flex-1"><p className="text-sm font-medium truncate">{e.nomesPopulares[0]}</p></div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {searchResults.criadores.length > 0 && (
+                      <div className="p-2 border-t border-gray-100">
+                        <p className="text-xs font-medium text-[var(--asf-gray-medium)] px-2 py-1">CRIADORES</p>
+                        {searchResults.criadores.map(c => (
+                          <button key={c.id} onClick={() => goSearch(`/perfil/${c.id}`)}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 text-left">
+                            <div className="w-7 h-7 rounded-full bg-[var(--asf-green)]/10 flex items-center justify-center flex-shrink-0"><span className="text-xs font-bold text-[var(--asf-green)]">{c.nome.charAt(0)}</span></div>
+                            <div className="min-w-0 flex-1"><p className="text-sm font-medium truncate">{c.nome}</p><p className="text-xs text-[var(--asf-gray-medium)] truncate">{c.cidade}, {c.estado}</p></div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="p-4 text-center text-sm text-[var(--asf-gray-medium)]">Nenhum resultado</div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Mobile Menu */}
       <div
-        className={`lg:hidden absolute top-full left-0 right-0 bg-white shadow-lg 
+        className={`lg:hidden absolute top-full left-0 right-0 bg-white shadow-lg
                    transition-all duration-300 overflow-hidden ${
-          isMobileMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+          isMobileMenuOpen ? 'max-h-[32rem] opacity-100' : 'max-h-0 opacity-0'
         }`}
       >
         <nav className="section-padding py-4 flex flex-col gap-2">
@@ -282,18 +344,41 @@ export function Header() {
           <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-gray-100">
             {user ? (
               <>
+                <div className="flex gap-2 mb-1">
+                  <Link
+                    to="/favoritos"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium text-sm
+                             bg-red-50 text-red-500 min-h-[44px]"
+                  >
+                    <Heart className="w-4 h-4" /> Favoritos
+                  </Link>
+                  <Link
+                    to="/notificacoes"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium text-sm
+                             bg-[var(--asf-green)]/10 text-[var(--asf-green)] min-h-[44px] relative"
+                  >
+                    <Bell className="w-4 h-4" /> Notificações
+                    {naoLidas > 0 && (
+                      <span className="absolute top-2 right-3 min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1">
+                        {naoLidas > 9 ? '9+' : naoLidas}
+                      </span>
+                    )}
+                  </Link>
+                </div>
                 <Link
                   to={isAdmin ? "/dashboard" : "/meu-perfil"}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="px-4 py-3 rounded-xl font-medium text-center bg-[var(--asf-yellow)]
-                           text-[var(--asf-gray-dark)]"
+                           text-[var(--asf-gray-dark)] min-h-[44px] flex items-center justify-center"
                 >
                   {isAdmin ? 'Painel Admin' : 'Meu Perfil'}
                 </Link>
                 <button
                   onClick={async () => { setIsMobileMenuOpen(false); await signOut(); navigate('/'); }}
-                  className="px-4 py-3 rounded-xl font-medium text-center border-2 border-gray-200 
-                           text-[var(--asf-gray-medium)]"
+                  className="px-4 py-3 rounded-xl font-medium text-center border-2 border-gray-200
+                           text-[var(--asf-gray-medium)] min-h-[44px]"
                 >
                   Sair
                 </button>

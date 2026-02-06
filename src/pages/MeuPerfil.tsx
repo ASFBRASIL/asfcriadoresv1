@@ -354,10 +354,10 @@ export function MeuPerfil() {
               </div>
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-[var(--asf-green)] text-white flex items-center justify-center hover:bg-[var(--asf-green-dark)] transition-colors shadow-md"
+                className="absolute -bottom-2 -right-2 w-10 h-10 rounded-full bg-[var(--asf-green)] text-white flex items-center justify-center hover:bg-[var(--asf-green-dark)] transition-colors shadow-md"
                 disabled={isUploading}
               >
-                <Camera className="w-3.5 h-3.5" />
+                <Camera className="w-4.5 h-4.5" />
               </button>
               <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
             </div>
@@ -387,19 +387,19 @@ export function MeuPerfil() {
             </div>
 
             {/* Ações rápidas */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
               <Link
                 to={`/perfil/${criador.id}`}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-100 text-sm font-medium text-[var(--asf-gray-dark)] hover:bg-gray-200 transition-colors"
+                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gray-100 text-sm font-medium text-[var(--asf-gray-dark)] hover:bg-gray-200 transition-colors flex-1 sm:flex-initial min-h-[44px]"
               >
-                <Eye className="w-4 h-4" /> Ver Perfil Público
+                <Eye className="w-4 h-4" /> <span className="hidden sm:inline">Ver </span>Perfil Público
               </Link>
               {isAdmin && (
                 <Link
                   to="/dashboard"
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--asf-green)]/10 text-sm font-medium text-[var(--asf-green)] hover:bg-[var(--asf-green)]/20 transition-colors"
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--asf-green)]/10 text-sm font-medium text-[var(--asf-green)] hover:bg-[var(--asf-green)]/20 transition-colors flex-1 sm:flex-initial min-h-[44px]"
                 >
-                  <Settings className="w-4 h-4" /> Painel Admin
+                  <Settings className="w-4 h-4" /> <span className="hidden sm:inline">Painel </span>Admin
                 </Link>
               )}
             </div>
@@ -410,19 +410,20 @@ export function MeuPerfil() {
       {/* Tabs */}
       <div className="bg-white border-b border-gray-100">
         <div className="container-asf section-padding">
-          <div className="flex gap-1 overflow-x-auto">
+          <div className="flex gap-1 overflow-x-auto scrollbar-hide -mx-1 px-1">
             {tabs.map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium rounded-t-xl transition-colors whitespace-nowrap ${
+                className={`flex items-center gap-2 px-4 py-3.5 text-sm font-medium rounded-t-xl transition-colors whitespace-nowrap min-h-[44px] ${
                   activeTab === tab.id
                     ? 'text-[var(--asf-green)] border-b-2 border-[var(--asf-green)] bg-[var(--asf-green)]/5'
                     : 'text-[var(--asf-gray-medium)] hover:text-[var(--asf-gray-dark)] hover:bg-gray-50'
                 }`}
               >
                 <tab.icon className="w-4 h-4" />
-                {tab.label}
+                <span className="hidden sm:inline">{tab.label}</span>
+                <span className="sm:hidden">{tab.id === 'perfil' ? 'Perfil' : tab.id === 'especies' ? 'Espécies' : 'Config'}</span>
               </button>
             ))}
           </div>
@@ -544,18 +545,18 @@ export function MeuPerfil() {
                     <input type="text" value={editData.endereco} onChange={e => setEditData({ ...editData, endereco: e.target.value })}
                       placeholder="Endereço (rua, número, bairro)"
                       className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[var(--asf-green)] focus:ring-2 focus:ring-[var(--asf-green)]/20 outline-none text-sm" />
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <input type="text" value={editData.cidade} onChange={e => setEditData({ ...editData, cidade: e.target.value })}
                         placeholder="Cidade"
-                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[var(--asf-green)] focus:ring-2 focus:ring-[var(--asf-green)]/20 outline-none text-sm" />
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[var(--asf-green)] focus:ring-2 focus:ring-[var(--asf-green)]/20 outline-none text-sm" />
                       <select value={editData.estado} onChange={e => setEditData({ ...editData, estado: e.target.value })}
-                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[var(--asf-green)] focus:ring-2 focus:ring-[var(--asf-green)]/20 outline-none text-sm">
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[var(--asf-green)] focus:ring-2 focus:ring-[var(--asf-green)]/20 outline-none text-sm">
                         <option value="">Estado</option>
                         {estados.map(uf => <option key={uf.sigla} value={uf.sigla}>{uf.nome}</option>)}
                       </select>
                       <input type="text" value={editData.cep} onChange={e => setEditData({ ...editData, cep: e.target.value })}
                         placeholder="CEP"
-                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[var(--asf-green)] focus:ring-2 focus:ring-[var(--asf-green)]/20 outline-none text-sm" />
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[var(--asf-green)] focus:ring-2 focus:ring-[var(--asf-green)]/20 outline-none text-sm" />
                     </div>
                     <p className="text-xs text-[var(--asf-gray-medium)]">
                       Ao salvar, sua localização no mapa será atualizada automaticamente.

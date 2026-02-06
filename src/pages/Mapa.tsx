@@ -213,7 +213,7 @@ export function Mapa() {
 
       <div className="flex flex-col lg:flex-row h-[calc(100vh-8rem)]">
         {/* Sidebar */}
-        <div className="w-full lg:w-96 bg-white border-r border-gray-100 flex flex-col">
+        <div className="w-full lg:w-96 bg-white border-r border-gray-100 flex flex-col max-h-[40vh] lg:max-h-none">
           {/* Search */}
           <div className="p-4 border-b border-gray-100">
             <div className="relative" ref={searchRef}>
@@ -465,30 +465,30 @@ export function Mapa() {
                         </div>
                       </div>
                     </Link>
-                    <div className="flex items-center gap-2 mt-2 ml-15 pl-[60px]">
+                    <div className="flex items-center gap-2 mt-2 pl-[3.75rem]">
                       <a
                         href={`https://wa.me/${criador.whatsapp}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={e => e.stopPropagation()}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg
                                  bg-green-500 text-white text-sm hover:bg-green-600
-                                 transition-colors duration-300"
+                                 transition-colors duration-300 min-h-[44px]"
                       >
-                        <Phone className="w-3.5 h-3.5" />
+                        <Phone className="w-4 h-4" />
                         Contato
                       </a>
                       {user && (
                         <button
                           onClick={() => isFavorito(criador.id) ? removerFavorito(criador.id, user.id) : adicionarFavorito(criador.id, user.id)}
-                          className={`p-1.5 rounded-lg transition-colors duration-300 ${
+                          className={`w-11 h-11 flex items-center justify-center rounded-lg transition-colors duration-300 ${
                             isFavorito(criador.id)
                               ? 'bg-red-100 text-red-500'
                               : 'bg-gray-100 text-gray-400 hover:text-red-500 hover:bg-red-50'
                           }`}
                           title={isFavorito(criador.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
                         >
-                          <Heart className={`w-4 h-4 ${isFavorito(criador.id) ? 'fill-current' : ''}`} />
+                          <Heart className={`w-5 h-5 ${isFavorito(criador.id) ? 'fill-current' : ''}`} />
                         </button>
                       )}
                     </div>
@@ -519,7 +519,7 @@ export function Mapa() {
         </div>
 
         {/* Map */}
-        <div className="flex-1 relative h-[50vh] lg:h-auto">
+        <div className="flex-1 relative min-h-[50vh] lg:h-auto">
           <MapContainer
             center={BRAZIL_CENTER}
             zoom={4}
@@ -592,14 +592,14 @@ export function Mapa() {
                     {user && (
                       <button
                         onClick={() => isFavorito(criador.id) ? removerFavorito(criador.id, user.id) : adicionarFavorito(criador.id, user.id)}
-                        className={`w-full mt-2 inline-flex items-center justify-center gap-1.5 px-3 py-1.5
-                                 rounded-lg text-sm transition-colors duration-300 ${
+                        className={`w-full mt-2 inline-flex items-center justify-center gap-1.5 px-3 py-2.5
+                                 rounded-lg text-sm transition-colors duration-300 min-h-[44px] ${
                           isFavorito(criador.id)
                             ? 'bg-red-100 text-red-600'
                             : 'bg-gray-100 text-gray-500 hover:bg-red-50 hover:text-red-500'
                         }`}
                       >
-                        <Heart className={`w-3.5 h-3.5 ${isFavorito(criador.id) ? 'fill-current' : ''}`} />
+                        <Heart className={`w-4 h-4 ${isFavorito(criador.id) ? 'fill-current' : ''}`} />
                         {isFavorito(criador.id) ? 'Salvo' : 'Favoritar'}
                       </button>
                     )}
@@ -609,8 +609,8 @@ export function Mapa() {
             ))}
           </MapContainer>
 
-          {/* Map Overlay Info */}
-          <div className="absolute bottom-4 left-4 right-4 lg:left-auto lg:right-4 lg:w-72 
+          {/* Map Overlay Info - hidden on mobile for more map space */}
+          <div className="hidden lg:block absolute bottom-4 right-4 w-72
                         bg-white rounded-xl shadow-lg p-4 z-[400]">
             <h4 className="font-medium text-[var(--asf-gray-dark)] mb-3">Como funciona o mapa?</h4>
             <div className="space-y-3">

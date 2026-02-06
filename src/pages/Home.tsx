@@ -174,20 +174,20 @@ export function Home() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
               </div>
               
-              {/* Floating Card */}
+              {/* Floating Card - hidden on small screens to prevent overflow */}
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5, delay: 0.5 }}
-                className="absolute -bottom-4 -left-4 lg:-left-8 bg-white rounded-xl shadow-lg p-4"
+                className="hidden sm:block absolute -bottom-4 left-0 sm:-left-4 lg:-left-8 bg-white rounded-xl shadow-lg p-3 sm:p-4"
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-[var(--asf-green)]/10 flex items-center justify-center">
-                    <MapPin className="w-6 h-6 text-[var(--asf-green)]" />
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[var(--asf-green)]/10 flex items-center justify-center">
+                    <MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-[var(--asf-green)]" />
                   </div>
                   <div>
-                    <div className="text-2xl font-bold text-[var(--asf-green)]">+500</div>
-                    <div className="text-sm text-[var(--asf-gray-medium)]">Criadores ativos</div>
+                    <div className="text-xl sm:text-2xl font-bold text-[var(--asf-green)]">+500</div>
+                    <div className="text-xs sm:text-sm text-[var(--asf-gray-medium)]">Criadores ativos</div>
                   </div>
                 </div>
               </motion.div>
