@@ -1,0 +1,274 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 9%;
+    --primary: 152 38% 30%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 45 89% 57%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+    --accent: 45 89% 57%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 152 38% 30%;
+    --radius: 0.75rem;
+    
+    /* Custom ASF Colors */
+    --asf-green: #2F6B4F;
+    --asf-green-dark: #255542;
+    --asf-green-light: #3D8563;
+    --asf-yellow: #F4C430;
+    --asf-yellow-dark: #D9A91A;
+    --asf-yellow-light: #F9D868;
+    --asf-gray-light: #F5F5F5;
+    --asf-gray-dark: #2B2B2B;
+    --asf-gray-medium: #6B7280;
+  }
+
+  * {
+    @apply border-border;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply bg-background text-foreground font-inter antialiased;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-poppins font-semibold;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-[var(--asf-yellow)] text-[var(--asf-gray-dark)] px-6 py-3 rounded-xl font-medium 
+           transition-all duration-300 hover:bg-[var(--asf-yellow-dark)] hover:shadow-lg
+           hover:-translate-y-0.5 active:translate-y-0;
+  }
+  
+  .btn-secondary {
+    @apply border-2 border-[var(--asf-green)] text-[var(--asf-green)] px-6 py-3 rounded-xl font-medium 
+           transition-all duration-300 hover:bg-[var(--asf-green)] hover:text-white
+           hover:-translate-y-0.5 active:translate-y-0;
+  }
+  
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-xl hover:-translate-y-1;
+  }
+  
+  .text-gradient {
+    @apply bg-gradient-to-r from-[var(--asf-green)] to-[var(--asf-green-light)] bg-clip-text text-transparent;
+  }
+  
+  .section-padding {
+    @apply px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16;
+  }
+  
+  .container-asf {
+    @apply max-w-7xl mx-auto;
+  }
+}
+
+@layer utilities {
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  .animate-pulse-soft {
+    animation: pulse-soft 4s ease-in-out infinite;
+  }
+  
+  .animate-slide-up {
+    animation: slide-up 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  
+  .animate-fade-in {
+    animation: fade-in 0.5s ease-out;
+  }
+  
+  .animate-scale-in {
+    animation: scale-in 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-15px); }
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes slide-up {
+  0% { transform: translateY(20px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes fade-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes scale-in {
+  0% { transform: scale(0.95); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Leaflet Map Styles */
+.leaflet-container {
+  font-family: 'Inter', sans-serif;
+}
+
+.leaflet-popup-content-wrapper {
+  @apply rounded-xl shadow-lg;
+}
+
+.leaflet-popup-content {
+  @apply m-0 p-0;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100 rounded-full;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(47, 107, 79, 0.3);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(47, 107, 79, 0.5);
+}
+
+/* Embla Carousel */
+.embla {
+  overflow: hidden;
+}
+
+.embla__container {
+  display: flex;
+}
+
+.embla__slide {
+  flex: 0 0 100%;
+  min-width: 0;
+}
+
+/* Search Autocomplete */
+.search-autocomplete {
+  @apply relative;
+}
+
+.search-autocomplete input {
+  @apply w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 
+         focus:border-[var(--asf-green)] focus:ring-2 
+         transition-all duration-300 outline-none;
+  --tw-ring-color: rgba(47, 107, 79, 0.2);
+}
+
+.search-autocomplete .search-icon {
+  @apply absolute left-4 top-1/2 -translate-y-1/2 text-gray-400;
+}
+
+.search-dropdown {
+  @apply absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl 
+         border border-gray-100 max-h-80 overflow-y-auto z-50;
+}
+
+.search-dropdown-item {
+  @apply px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors duration-200
+         flex items-center gap-3;
+}
+
+/* Species Card */
+.species-card {
+  @apply bg-white rounded-2xl overflow-hidden shadow-card card-hover;
+}
+
+.species-card-image {
+  @apply relative h-48 overflow-hidden;
+}
+
+.species-card-image img {
+  @apply w-full h-full object-cover transition-transform duration-500 hover:scale-110;
+}
+
+/* Status Badge */
+.status-badge {
+  @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium;
+}
+
+.status-badge.venda {
+  @apply bg-green-100 text-green-700;
+}
+
+.status-badge.troca {
+  @apply bg-yellow-100 text-yellow-700;
+}
+
+.status-badge.informacao {
+  @apply bg-blue-100 text-blue-700;
+}
+
+/* Difficulty Badge */
+.difficulty-badge {
+  @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium;
+}
+
+.difficulty-badge.iniciante {
+  @apply bg-green-100 text-green-700;
+}
+
+.difficulty-badge.intermediario {
+  @apply bg-yellow-100 text-yellow-700;
+}
+
+.difficulty-badge.avancado {
+  @apply bg-red-100 text-red-700;
+}
+
+/* Conservation Status */
+.conservation-status {
+  @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium;
+}
+
+.conservation-status.comum {
+  @apply bg-green-100 text-green-700;
+}
+
+.conservation-status.vulneravel {
+  @apply bg-yellow-100 text-yellow-700;
+}
+
+.conservation-status.ameacada {
+  @apply bg-orange-100 text-orange-700;
+}
+
+.conservation-status.rara {
+  @apply bg-red-100 text-red-700;
+}
