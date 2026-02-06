@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { geocodeEndereco, getEstadoCoordenadas } from '../lib/geocoding';
 import { criadores as mockCriadores, type CriadorData } from '../data/criadores';
 
 interface UseCriadoresOptions {
@@ -192,6 +193,26 @@ export function useUpdateCriador() {
     }
 
     try {
+      // Re-geocodificar se cidade ou estado mudaram
+      const locationChanged = updates.cidade || updates.estado || updates.cep || updates.endereco;
+      if (locationChanged) {
+        const geoResult = await geocodeEndereco({
+          cidade: updates.cidade as string,
+          estado: updates.estado as string,
+          cep: updates.cep as string,
+          endereco: updates.endereco as string,
+        });
+
+        if (geoResult) {
+          updates.latitude = geoResult.latitude;
+          updates.longitude = geoResult.longitude;
+        } else if (updates.estado) {
+          const estadoCoords = getEstadoCoordenadas(updates.estado as string);
+          updates.latitude = estadoCoords.latitude;
+          updates.longitude = estadoCoords.longitude;
+        }
+      }
+
       const { data, error: updateError } = await supabase
         .from('criadores')
         .update({ ...updates, updated_at: new Date().toISOString() })

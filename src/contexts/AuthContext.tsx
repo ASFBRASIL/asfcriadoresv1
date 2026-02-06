@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { supabase, type Criador, isSupabaseConfigured } from '../lib/supabase';
+import { geocodeEndereco, getEstadoCoordenadas } from '../lib/geocoding';
 import type { User, Session } from '@supabase/supabase-js';
 
 interface AuthContextType {
@@ -9,7 +10,7 @@ interface AuthContextType {
   isLoading: boolean;
   isCriadorLoading: boolean;
   isAdmin: boolean;
-  signUp: (email: string, password: string, nome: string, telefone: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, nome: string, telefone: string, cidade?: string, estado?: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -113,7 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, [supabaseReady]);
 
-  const signUp = async (email: string, password: string, nome: string, telefone: string) => {
+  const signUp = async (email: string, password: string, nome: string, telefone: string, cidade?: string, estado?: string) => {
     if (!supabaseReady) {
       // Modo offline - simular sucesso
       setUser({ id: 'mock-user', email } as User);
@@ -135,6 +136,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (authError) throw authError;
 
+      // Geocodificar endereço para obter coordenadas
+      let latitude = 0;
+      let longitude = 0;
+
+      if (cidade || estado) {
+        const geoResult = await geocodeEndereco({ cidade, estado });
+        if (geoResult) {
+          latitude = geoResult.latitude;
+          longitude = geoResult.longitude;
+        } else if (estado) {
+          // Fallback: centro do estado
+          const estadoCoords = getEstadoCoordenadas(estado);
+          latitude = estadoCoords.latitude;
+          longitude = estadoCoords.longitude;
+        }
+      }
+
       // Criar registro na tabela criadores
       if (authData.user) {
         const { error: criadorError } = await supabase.from('criadores').insert({
@@ -144,11 +162,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           telefone,
           whatsapp: telefone.replace(/\D/g, ''),
           endereco: '',
-          cidade: '',
-          estado: '',
+          cidade: cidade || '',
+          estado: estado || '',
           cep: '',
-          latitude: 0,
-          longitude: 0,
+          latitude,
+          longitude,
           status: ['informacao'],
           verificado: false,
           avaliacao_media: 0,

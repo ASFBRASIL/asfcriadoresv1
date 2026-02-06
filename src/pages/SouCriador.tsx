@@ -63,7 +63,7 @@ export function SouCriador() {
     setIsSubmitting(true);
     setErrorMsg('');
 
-    const { error } = await signUp(formData.email, formData.password, formData.nome, formData.telefone);
+    const { error } = await signUp(formData.email, formData.password, formData.nome, formData.telefone, formData.cidade, formData.estado);
 
     if (error) {
       setErrorMsg(error.message || 'Erro ao criar conta. Tente novamente.');
