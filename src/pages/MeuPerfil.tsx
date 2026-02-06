@@ -219,9 +219,21 @@ export function MeuPerfil() {
 
     const url = await uploadAvatar(file, user.id);
     if (url) {
-      await updateCriador(criador.id, { avatar_url: url });
-      await refreshCriador();
+      const { error } = await updateCriador(criador.id, { avatar_url: url });
+      if (!error) {
+        setSaveMsg('Foto de perfil atualizada!');
+        setTimeout(() => setSaveMsg(''), 3000);
+        await refreshCriador();
+      } else {
+        setSaveMsg('Erro ao salvar foto. Tente novamente.');
+        setTimeout(() => setSaveMsg(''), 3000);
+      }
+    } else {
+      setSaveMsg('Erro ao fazer upload da foto. Tente novamente.');
+      setTimeout(() => setSaveMsg(''), 3000);
     }
+    // Limpar input para permitir re-selecionar o mesmo arquivo
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleToggleStatus = (status: string) => {
