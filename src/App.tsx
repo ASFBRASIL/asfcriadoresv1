@@ -12,6 +12,7 @@ import { SouCriador } from './pages/SouCriador';
 import { Entrar } from './pages/Entrar';
 import { RecuperarSenha } from './pages/RecuperarSenha';
 import { MeusFavoritos } from './pages/MeusFavoritos';
+import { Criadores } from './pages/Criadores';
 import { PerfilCriador } from './pages/PerfilCriador';
 import { MeuPerfil } from './pages/MeuPerfil';
 import { Dashboard } from './pages/Dashboard';
@@ -31,6 +32,7 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/mapa" element={<Mapa />} />
               <Route path="/especies" element={<Especies />} />
+              <Route path="/criadores" element={<Criadores />} />
               <Route path="/especie/:id" element={<EspecieDetalhe />} />
               <Route path="/sobre" element={<Sobre />} />
               <Route path="/sou-criador" element={<SouCriador />} />

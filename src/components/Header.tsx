@@ -10,7 +10,8 @@ import { criadores as mockCriadores } from '../data/criadores';
 const navLinks = [
   { path: '/', label: 'Home' },
   { path: '/mapa', label: 'Mapa' },
-  { path: '/especies', label: 'Conheça Espécies' },
+  { path: '/especies', label: 'Espécies' },
+  { path: '/criadores', label: 'Criadores' },
   { path: '/sobre', label: 'Sobre' },
 ];
 

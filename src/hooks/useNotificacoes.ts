@@ -110,7 +110,11 @@ export function useNotificacoes(userId?: string) {
   ] : [];
 
   const carregar = useCallback(async () => {
-    if (!userId) return;
+    if (!userId) {
+      setNotificacoes([]);
+      setNaoLidas(0);
+      return;
+    }
     setIsLoading(true);
 
     if (!isSupabaseConfigured()) {
@@ -132,8 +136,9 @@ export function useNotificacoes(userId?: string) {
       setNotificacoes(list);
       setNaoLidas(list.filter(n => !n.lida).length);
     } catch {
-      setNotificacoes(mockNotificacoes);
-      setNaoLidas(mockNotificacoes.filter(n => !n.lida).length);
+      // Tabela pode não existir ou erro de rede - mostrar 0 notificações
+      setNotificacoes([]);
+      setNaoLidas(0);
     } finally {
       setIsLoading(false);
     }

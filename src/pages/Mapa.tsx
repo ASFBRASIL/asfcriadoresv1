@@ -408,7 +408,7 @@ export function Mapa() {
               <div className="divide-y divide-gray-100">
                 {filteredCriadores.map((criador) => (
                   <div key={criador.id} className="p-4 hover:bg-gray-50 transition-colors duration-200">
-                    <div className="flex items-start gap-3">
+                    <Link to={`/perfil/${criador.id}`} className="flex items-start gap-3 group">
                       <div className="w-12 h-12 rounded-full bg-[var(--asf-green)]/10 flex items-center justify-center flex-shrink-0">
                         <span className="text-lg font-semibold text-[var(--asf-green)]">
                           {criador.nome.charAt(0)}
@@ -416,7 +416,7 @@ export function Mapa() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <h4 className="font-medium text-[var(--asf-gray-dark)] truncate">
+                          <h4 className="font-medium text-[var(--asf-gray-dark)] truncate group-hover:text-[var(--asf-green)] transition-colors">
                             {criador.nome}
                           </h4>
                           {criador.verificado && (
@@ -463,42 +463,34 @@ export function Mapa() {
                             </span>
                           ))}
                         </div>
-                        <div className="flex items-center gap-2 mt-3">
-                          <Link
-                            to={`/perfil/${criador.id}`}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg
-                                     bg-[var(--asf-green)] text-white text-sm hover:bg-[var(--asf-green-dark)]
-                                     transition-colors duration-300"
-                          >
-                            <User className="w-3.5 h-3.5" />
-                            Perfil
-                          </Link>
-                          <a
-                            href={`https://wa.me/${criador.whatsapp}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg
-                                     bg-green-500 text-white text-sm hover:bg-green-600
-                                     transition-colors duration-300"
-                          >
-                            <Phone className="w-3.5 h-3.5" />
-                            Contato
-                          </a>
-                          {user && (
-                            <button
-                              onClick={() => isFavorito(criador.id) ? removerFavorito(criador.id, user.id) : adicionarFavorito(criador.id, user.id)}
-                              className={`p-1.5 rounded-lg transition-colors duration-300 ${
-                                isFavorito(criador.id)
-                                  ? 'bg-red-100 text-red-500'
-                                  : 'bg-gray-100 text-gray-400 hover:text-red-500 hover:bg-red-50'
-                              }`}
-                              title={isFavorito(criador.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
-                            >
-                              <Heart className={`w-4 h-4 ${isFavorito(criador.id) ? 'fill-current' : ''}`} />
-                            </button>
-                          )}
-                        </div>
                       </div>
+                    </Link>
+                    <div className="flex items-center gap-2 mt-2 ml-15 pl-[60px]">
+                      <a
+                        href={`https://wa.me/${criador.whatsapp}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={e => e.stopPropagation()}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+                                 bg-green-500 text-white text-sm hover:bg-green-600
+                                 transition-colors duration-300"
+                      >
+                        <Phone className="w-3.5 h-3.5" />
+                        Contato
+                      </a>
+                      {user && (
+                        <button
+                          onClick={() => isFavorito(criador.id) ? removerFavorito(criador.id, user.id) : adicionarFavorito(criador.id, user.id)}
+                          className={`p-1.5 rounded-lg transition-colors duration-300 ${
+                            isFavorito(criador.id)
+                              ? 'bg-red-100 text-red-500'
+                              : 'bg-gray-100 text-gray-400 hover:text-red-500 hover:bg-red-50'
+                          }`}
+                          title={isFavorito(criador.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+                        >
+                          <Heart className={`w-4 h-4 ${isFavorito(criador.id) ? 'fill-current' : ''}`} />
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
