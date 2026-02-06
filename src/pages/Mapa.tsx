@@ -59,8 +59,14 @@ export function Mapa() {
   // Helpers para acessar dados de localização (compatível com mock e Supabase)
   const getCidade = (criador: any) => criador.localizacao?.cidade || criador.cidade || '';
   const getEstado = (criador: any) => criador.localizacao?.estado || criador.estado || '';
-  const getLatitude = (criador: any) => criador.localizacao?.latitude || criador.latitude || 0;
-  const getLongitude = (criador: any) => criador.localizacao?.longitude || criador.longitude || 0;
+  const getLatitude = (criador: any) => {
+    const val = criador.localizacao?.latitude ?? criador.latitude ?? 0;
+    return typeof val === 'string' ? parseFloat(val) : val;
+  };
+  const getLongitude = (criador: any) => {
+    const val = criador.localizacao?.longitude ?? criador.longitude ?? 0;
+    return typeof val === 'string' ? parseFloat(val) : val;
+  };
   const getAvaliacao = (criador: any) => criador.avaliacao ?? criador.avaliacao_media ?? 0;
   const getTotalAvaliacoes = (criador: any) => criador.totalAvaliacoes ?? criador.total_avaliacoes ?? 0;
   const getDescricao = (criador: any) => criador.descricao || criador.bio || '';
