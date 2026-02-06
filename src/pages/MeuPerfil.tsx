@@ -124,6 +124,7 @@ export function MeuPerfil() {
   const [especies, setEspecies] = useState<any[]>([]);
   const [loadingEspecies, setLoadingEspecies] = useState(true);
   const [saveMsg, setSaveMsg] = useState('');
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Carregar espécies do criador
@@ -271,23 +272,36 @@ export function MeuPerfil() {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
+    // Preview local imediato
+    const localPreview = URL.createObjectURL(file);
+    setAvatarPreview(localPreview);
+    setSaveMsg('Enviando foto...');
+
     const url = await uploadAvatar(file, user.id);
     if (url) {
-      const { error } = await updateCriador(criador.id, { avatar_url: url });
+      // Adicionar cache-buster para garantir que o browser busque a nova imagem
+      const cacheBustUrl = url + '?t=' + Date.now();
+      const { error } = await updateCriador(criador.id, { avatar_url: cacheBustUrl });
       if (!error) {
         setSaveMsg('Foto de perfil atualizada!');
         setTimeout(() => setSaveMsg(''), 3000);
         await refreshCriador();
+        // Limpar preview local após refresh trazer o avatar do servidor
+        setTimeout(() => setAvatarPreview(null), 500);
       } else {
         setSaveMsg('Erro ao salvar foto. Tente novamente.');
         setTimeout(() => setSaveMsg(''), 3000);
+        setAvatarPreview(null);
       }
     } else {
       setSaveMsg('Erro ao fazer upload da foto. Tente novamente.');
       setTimeout(() => setSaveMsg(''), 3000);
+      setAvatarPreview(null);
     }
     // Limpar input para permitir re-selecionar o mesmo arquivo
     if (fileInputRef.current) fileInputRef.current.value = '';
+    // Revogar URL local para liberar memória
+    URL.revokeObjectURL(localPreview);
   };
 
   const handleToggleStatus = (status: string) => {
@@ -325,12 +339,17 @@ export function MeuPerfil() {
             {/* Avatar */}
             <div className="relative">
               <div className="w-20 h-20 rounded-2xl bg-[var(--asf-green)]/10 flex items-center justify-center overflow-hidden">
-                {criador.avatar_url ? (
-                  <img src={criador.avatar_url} alt={criador.nome} className="w-full h-full object-cover" />
+                {(avatarPreview || criador.avatar_url) ? (
+                  <img src={avatarPreview || criador.avatar_url} alt={criador.nome} className="w-full h-full object-cover" />
                 ) : (
                   <span className="text-2xl font-bold text-[var(--asf-green)]">
                     {criador.nome.charAt(0)}
                   </span>
+                )}
+                {isUploading && (
+                  <div className="absolute inset-0 bg-black/40 rounded-2xl flex items-center justify-center">
+                    <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  </div>
                 )}
               </div>
               <button
