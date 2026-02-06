@@ -1,57 +1,59 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { geocodeEndereco, getEstadoCoordenadas } from '../lib/geocoding';
 
 export function AuthCallback() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Processar o callback de autenticação OAuth
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        // Verificar se o usuário já tem perfil de criador
-        supabase
-          .from('criadores')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .single()
-          .then(({ data: criador }) => {
-            if (criador) {
-              navigate('/');
-            } else {
-              // Criar perfil básico para usuários OAuth
-              const nome = session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || '';
-              const avatar = session.user.user_metadata?.avatar_url;
-              
-              supabase
-                .from('criadores')
-                .insert({
-                  user_id: session.user.id,
-                  nome,
-                  email: session.user.email,
-                  telefone: '',
-                  whatsapp: '',
-                  avatar_url: avatar,
-                  endereco: '',
-                  cidade: '',
-                  estado: '',
-                  cep: '',
-                  latitude: 0,
-                  longitude: 0,
-                  status: ['informacao'],
-                  verificado: false,
-                  avaliacao_media: 0,
-                  total_avaliacoes: 0,
-                })
-                .then(() => {
-                  navigate('/');
-                });
-            }
-          });
-      } else {
+    const handleCallback = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
         navigate('/entrar');
+        return;
       }
-    });
+
+      // Verificar se o criador já existe (o trigger handle_new_user() já cria automaticamente)
+      const { data: criador } = await supabase
+        .from('criadores')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .single();
+
+      if (criador) {
+        // Se não tem coordenadas, tentar geocodificar com base na cidade/estado
+        if ((!criador.latitude || criador.latitude === 0) && (criador.cidade || criador.estado)) {
+          const geoResult = await geocodeEndereco({
+            cidade: criador.cidade,
+            estado: criador.estado,
+          });
+          if (geoResult) {
+            await supabase.from('criadores')
+              .update({ latitude: geoResult.latitude, longitude: geoResult.longitude })
+              .eq('id', criador.id);
+          } else if (criador.estado) {
+            const estadoCoords = getEstadoCoordenadas(criador.estado);
+            await supabase.from('criadores')
+              .update({ latitude: estadoCoords.latitude, longitude: estadoCoords.longitude })
+              .eq('id', criador.id);
+          }
+        }
+
+        // Atualizar avatar se vier do OAuth e não tiver no perfil
+        const oauthAvatar = session.user.user_metadata?.avatar_url;
+        if (oauthAvatar && !criador.avatar_url) {
+          await supabase.from('criadores')
+            .update({ avatar_url: oauthAvatar })
+            .eq('id', criador.id);
+        }
+      }
+
+      navigate('/meu-perfil');
+    };
+
+    handleCallback();
   }, [navigate]);
 
   return (

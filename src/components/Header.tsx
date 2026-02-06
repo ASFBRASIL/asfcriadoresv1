@@ -180,7 +180,7 @@ export function Header() {
                   </Link>
                 </div>
                 <Link
-                  to={isAdmin ? "/dashboard" : (criador ? `/perfil/${criador.id}` : "/")}
+                  to={isAdmin ? "/dashboard" : "/meu-perfil"}
                   className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium
                            text-[var(--asf-gray-dark)] hover:bg-gray-100 transition-all duration-300"
                 >
@@ -255,9 +255,9 @@ export function Header() {
             {user ? (
               <>
                 <Link
-                  to={isAdmin ? "/dashboard" : (criador ? `/perfil/${criador.id}` : "/")}
+                  to={isAdmin ? "/dashboard" : "/meu-perfil"}
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="px-4 py-3 rounded-xl font-medium text-center bg-[var(--asf-yellow)] 
+                  className="px-4 py-3 rounded-xl font-medium text-center bg-[var(--asf-yellow)]
                            text-[var(--asf-gray-dark)]"
                 >
                   {isAdmin ? 'Painel Admin' : 'Meu Perfil'}

@@ -13,6 +13,7 @@ import { Entrar } from './pages/Entrar';
 import { RecuperarSenha } from './pages/RecuperarSenha';
 import { MeusFavoritos } from './pages/MeusFavoritos';
 import { PerfilCriador } from './pages/PerfilCriador';
+import { MeuPerfil } from './pages/MeuPerfil';
 import { Dashboard } from './pages/Dashboard';
 import { AuthCallback } from './pages/AuthCallback';
 import { Termos } from './pages/Termos';
@@ -39,6 +40,9 @@ function App() {
               <Route path="/privacidade" element={<Privacidade />} />
               <Route path="/favoritos" element={
                 <ProtectedRoute><MeusFavoritos /></ProtectedRoute>
+              } />
+              <Route path="/meu-perfil" element={
+                <ProtectedRoute><MeuPerfil /></ProtectedRoute>
               } />
               <Route path="/perfil/:id" element={<PerfilCriador />} />
               <Route

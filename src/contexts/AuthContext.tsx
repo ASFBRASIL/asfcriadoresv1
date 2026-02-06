@@ -123,57 +123,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
+      // O trigger handle_new_user() cria automaticamente o registro em criadores
+      // quando o auth user é criado, usando os dados do raw_user_meta_data
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
           data: {
             nome,
             telefone,
+            cidade: cidade || '',
+            estado: estado || '',
           },
         },
       });
 
       if (authError) throw authError;
 
-      // Geocodificar endereço para obter coordenadas
-      let latitude = 0;
-      let longitude = 0;
-
-      if (cidade || estado) {
-        const geoResult = await geocodeEndereco({ cidade, estado });
-        if (geoResult) {
-          latitude = geoResult.latitude;
-          longitude = geoResult.longitude;
-        } else if (estado) {
-          // Fallback: centro do estado
-          const estadoCoords = getEstadoCoordenadas(estado);
-          latitude = estadoCoords.latitude;
-          longitude = estadoCoords.longitude;
+      // Após confirmação do email e login, geocodificar e atualizar coordenadas
+      // Isso é feito no primeiro login via AuthCallback ou ao editar perfil
+      if (authData.user && authData.session) {
+        // Sessão já ativa (ex: email confirmation disabled) - atualizar coordenadas
+        if (cidade || estado) {
+          const geoResult = await geocodeEndereco({ cidade, estado });
+          if (geoResult) {
+            await supabase.from('criadores')
+              .update({ latitude: geoResult.latitude, longitude: geoResult.longitude })
+              .eq('user_id', authData.user.id);
+          } else if (estado) {
+            const estadoCoords = getEstadoCoordenadas(estado);
+            await supabase.from('criadores')
+              .update({ latitude: estadoCoords.latitude, longitude: estadoCoords.longitude })
+              .eq('user_id', authData.user.id);
+          }
         }
-      }
-
-      // Criar registro na tabela criadores
-      if (authData.user) {
-        const { error: criadorError } = await supabase.from('criadores').insert({
-          user_id: authData.user.id,
-          nome,
-          email,
-          telefone,
-          whatsapp: telefone.replace(/\D/g, ''),
-          endereco: '',
-          cidade: cidade || '',
-          estado: estado || '',
-          cep: '',
-          latitude,
-          longitude,
-          status: ['informacao'],
-          verificado: false,
-          avaliacao_media: 0,
-          total_avaliacoes: 0,
-        });
-
-        if (criadorError) throw criadorError;
       }
 
       return { error: null };

@@ -42,7 +42,7 @@ export function SouCriador() {
             <p className="text-[var(--asf-gray-medium)] mb-6">Acesse seu perfil ou explore o mapa de criadores.</p>
             <div className="flex gap-3 justify-center">
               <Link to="/mapa" className="px-6 py-3 rounded-xl bg-[var(--asf-green)] text-white font-medium hover:bg-[var(--asf-green-dark)] transition-colors">Ver Mapa</Link>
-              <Link to="/dashboard" className="px-6 py-3 rounded-xl bg-gray-100 text-[var(--asf-gray-dark)] font-medium hover:bg-gray-200 transition-colors">Dashboard</Link>
+              <Link to="/meu-perfil" className="px-6 py-3 rounded-xl bg-gray-100 text-[var(--asf-gray-dark)] font-medium hover:bg-gray-200 transition-colors">Meu Perfil</Link>
             </div>
           </div>
         </div>
