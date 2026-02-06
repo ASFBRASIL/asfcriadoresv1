@@ -1,45 +1,25 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, Users, Leaf, ArrowRight, ChevronLeft, ChevronRight, Search, MessageCircle, Map } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
 import { motion } from 'framer-motion';
+import { useSiteConfig, type BannerItem } from '../hooks/useSiteConfig';
 
-// Banner data for carousel
-const banners = [
-  {
-    id: 1,
-    title: 'Produtos para Meliponicultura',
-    description: 'Caixas racionais, ferramentas e acessórios para seu meliponário',
-    cta: 'Ver produtos',
-    link: '/mapa',
-    color: 'from-[var(--asf-green)] to-[var(--asf-green-light)]',
-    icon: Leaf,
-  },
-  {
-    id: 2,
-    title: 'Aprenda sobre Meliponicultura',
-    description: 'Conheça as espécies de abelhas sem ferrão nativas do Brasil',
-    cta: 'Explorar espécies',
-    link: '/especies',
-    color: 'from-[var(--asf-yellow)] to-[var(--asf-yellow-dark)]',
-    icon: Users,
-  },
-  {
-    id: 3,
-    title: 'Encontre Criadores Próximos',
-    description: 'Use nosso mapa interativo para localizar meliponicultores',
-    cta: 'Explorar mapa',
-    link: '/mapa',
-    color: 'from-blue-500 to-blue-600',
-    icon: Map,
-  },
-];
+// Color map for dynamic banners
+const colorMap: Record<string, string> = {
+  green: 'from-[var(--asf-green)] to-[var(--asf-green-light)]',
+  yellow: 'from-[var(--asf-yellow)] to-[var(--asf-yellow-dark)]',
+  blue: 'from-blue-500 to-blue-600',
+  purple: 'from-purple-500 to-purple-600',
+  red: 'from-red-500 to-red-600',
+};
+const iconMap: Record<string, any> = { green: Leaf, yellow: Users, blue: Map, purple: Leaf, red: Leaf };
 
-// Stats data
-const stats = [
-  { value: '+500', label: 'Criadores cadastrados', icon: Users },
-  { value: '+50', label: 'Espécies catalogadas', icon: Leaf },
-  { value: '27', label: 'Estados atendidos', icon: MapPin },
+// Fallback banners (caso o DB não esteja disponível)
+const fallbackBanners = [
+  { id: 1, title: 'Produtos para Meliponicultura', description: 'Caixas racionais, ferramentas e acessórios para seu meliponário', cta: 'Ver produtos', link: '/mapa', color: 'from-[var(--asf-green)] to-[var(--asf-green-light)]', icon: Leaf },
+  { id: 2, title: 'Aprenda sobre Meliponicultura', description: 'Conheça as espécies de abelhas sem ferrão nativas do Brasil', cta: 'Explorar espécies', link: '/especies', color: 'from-[var(--asf-yellow)] to-[var(--asf-yellow-dark)]', icon: Users },
+  { id: 3, title: 'Encontre Criadores Próximos', description: 'Use nosso mapa interativo para localizar meliponicultores', cta: 'Explorar mapa', link: '/mapa', color: 'from-blue-500 to-blue-600', icon: Map },
 ];
 
 // Features data
@@ -63,6 +43,36 @@ const features = [
 
 export function Home() {
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
+  const { config } = useSiteConfig();
+
+  // Build dynamic banners from site config
+  const banners = useMemo(() => {
+    const dbBanners = config.banners as BannerItem[] | undefined;
+    if (!dbBanners || !Array.isArray(dbBanners) || dbBanners.length === 0) return fallbackBanners;
+    return dbBanners
+      .filter(b => b.ativo !== false)
+      .map((b, i) => ({
+        id: i + 1,
+        title: b.titulo,
+        description: b.descricao,
+        cta: b.cta,
+        link: b.link,
+        color: colorMap[b.cor] || colorMap.green,
+        icon: iconMap[b.cor] || Leaf,
+      }));
+  }, [config.banners]);
+
+  // Dynamic stats from site config
+  const stats = useMemo(() => [
+    { value: config.stats_criadores || '+500', label: 'Criadores cadastrados', icon: Users },
+    { value: config.stats_especies || '+50', label: 'Espécies catalogadas', icon: Leaf },
+    { value: config.stats_estados || '27', label: 'Estados atendidos', icon: MapPin },
+  ], [config.stats_criadores, config.stats_especies, config.stats_estados]);
+
+  // Dynamic hero text
+  const heroTitulo = (config.hero_titulo as string) || 'Encontre criadores de abelhas sem ferrão no Brasil';
+  const heroSubtitulo = (config.hero_subtitulo as string) || 'Conectando apaixonados pela meliponicultura em todo o território nacional para preservar nossas espécies nativas e fortalecer a comunidade de criadores.';
+  const heroImagem = (config.hero_imagem as string) || '/images/banner-home-optimized.jpg';
 
   const scrollPrev = useCallback(() => {
     if (emblaApi) emblaApi.scrollPrev();
@@ -75,7 +85,7 @@ export function Home() {
   // Auto-play carousel
   useEffect(() => {
     if (!emblaApi) return;
-    
+
     const autoplay = setInterval(() => {
       emblaApi.scrollNext();
     }, 5000);
@@ -96,21 +106,21 @@ export function Home() {
               transition={{ duration: 0.6 }}
               className="order-2 lg:order-1"
             >
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--asf-green)]/10 
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--asf-green)]/10
                             text-[var(--asf-green)] text-sm font-medium mb-4">
                 <Users className="w-4 h-4" />
-                <span>+500 Criadores</span>
+                <span>{stats[0].value} Criadores</span>
               </div>
-              
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-poppins font-bold text-[var(--asf-gray-dark)] 
+
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-poppins font-bold text-[var(--asf-gray-dark)]
                            leading-tight mb-4">
-                Encontre criadores de{' '}
-                <span className="text-gradient">abelhas sem ferrão</span> no Brasil
+                {heroTitulo.includes('abelhas sem ferrão') ? (
+                  <>Encontre criadores de{' '}<span className="text-gradient">abelhas sem ferrão</span> no Brasil</>
+                ) : heroTitulo}
               </h1>
-              
+
               <p className="text-base lg:text-lg text-[var(--asf-gray-medium)] mb-6 max-w-xl">
-                Conectando apaixonados pela meliponicultura em todo o território nacional 
-                para preservar nossas espécies nativas e fortalecer a comunidade de criadores.
+                {heroSubtitulo}
               </p>
               
               <div className="flex flex-wrap gap-3 mb-6">
@@ -167,7 +177,7 @@ export function Home() {
             >
               <div className="relative aspect-[4/3] rounded-2xl overflow-hidden shadow-soft-lg">
                 <img
-                  src="/images/banner-home-optimized.jpg"
+                  src={heroImagem}
                   alt="Abelhas sem ferrão no ninho"
                   className="w-full h-full object-cover"
                 />
@@ -186,7 +196,7 @@ export function Home() {
                     <MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-[var(--asf-green)]" />
                   </div>
                   <div>
-                    <div className="text-xl sm:text-2xl font-bold text-[var(--asf-green)]">+500</div>
+                    <div className="text-xl sm:text-2xl font-bold text-[var(--asf-green)]">{stats[0].value}</div>
                     <div className="text-xs sm:text-sm text-[var(--asf-gray-medium)]">Criadores ativos</div>
                   </div>
                 </div>

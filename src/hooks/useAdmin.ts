@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { supabase, isSupabaseConfigured, dbEspecieToApp } from '../lib/supabase';
 import { criadores as mockCriadores } from '../data/criadores';
 import { especies as mockEspecies } from '../data/especies';
 
@@ -255,8 +255,44 @@ export function useAdminCriadores() {
 }
 
 // ============================================================
-// ADMIN ESPÉCIES (CRUD completo)
+// ADMIN ESPÉCIES (CRUD completo - com mapeamento snake_case ↔ camelCase)
 // ============================================================
+
+// Converte de camelCase (app) → snake_case (DB) para INSERT/UPDATE
+function especieToDb(e: Partial<AdminEspecie>): Record<string, any> {
+  const db: Record<string, any> = {};
+  if (e.nomeCientifico !== undefined) db.nome_cientifico = e.nomeCientifico;
+  if (e.nomesPopulares !== undefined) db.nomes_populares = e.nomesPopulares;
+  if (e.familia !== undefined) db.familia = e.familia;
+  if (e.tamanho !== undefined) db.tamanho = e.tamanho;
+  if (e.producaoMel !== undefined) db.producao_mel = e.producaoMel;
+  if (e.distribuicao !== undefined) db.distribuicao = e.distribuicao;
+  if (e.biomas !== undefined) db.biomas = e.biomas;
+  if (e.caracteristicas !== undefined) db.caracteristicas = e.caracteristicas;
+  if (e.comportamento !== undefined) db.comportamento = e.comportamento;
+  if (e.imagem !== undefined) db.imagem_url = e.imagem;
+  if (e.fontes !== undefined) db.fontes = e.fontes;
+  if (e.mel) {
+    if (e.mel.descricao !== undefined) db.mel_descricao = e.mel.descricao;
+    if (e.mel.propriedades !== undefined) db.mel_propriedades = e.mel.propriedades;
+    if (e.mel.sabor !== undefined) db.mel_sabor = e.mel.sabor;
+  }
+  if (e.manejo) {
+    if (e.manejo.dificuldade !== undefined) db.manejo_dificuldade = e.manejo.dificuldade;
+    if (e.manejo.caixaIdeal !== undefined) db.manejo_caixa = e.manejo.caixaIdeal;
+    if (e.manejo.temperamento !== undefined) db.manejo_temperamento = e.manejo.temperamento;
+    if (e.manejo.cuidadosEspeciais !== undefined) db.manejo_cuidados = e.manejo.cuidadosEspeciais;
+  }
+  if (e.conservacao) {
+    if (e.conservacao.status !== undefined) db.conservacao_status = e.conservacao.status;
+    if (e.conservacao.ameacas !== undefined) db.conservacao_ameacas = e.conservacao.ameacas;
+  }
+  // Gerar slug a partir do nome cientifico
+  if (e.nomeCientifico && !db.slug) {
+    db.slug = e.nomeCientifico.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  }
+  return db;
+}
 
 export function useAdminEspecies() {
   const [especies, setEspecies] = useState<AdminEspecie[]>([]);
@@ -283,10 +319,12 @@ export function useAdminEspecies() {
 
     try {
       let query = supabase.from('especies').select('*').order('nome_cientifico');
-      if (search) query = query.or(`nome_cientifico.ilike.%${search}%`);
+      if (search) query = query.or(`nome_cientifico.ilike.%${search}%,nomes_populares.cs.{${search}}`);
       const { data, error: e } = await query;
       if (e) throw e;
-      setEspecies((data || []) as any);
+      // Converter de snake_case DB para camelCase app
+      const converted = (data || []).map(row => dbEspecieToApp(row) as AdminEspecie);
+      setEspecies(converted);
     } catch (err) {
       setError((err as Error).message);
       setEspecies(mockEspecies as AdminEspecie[]);
@@ -302,10 +340,12 @@ export function useAdminEspecies() {
       return { success: true, data: nova };
     }
     try {
-      const { data, error: e } = await supabase.from('especies').insert(especie).select().single();
+      const dbData = especieToDb(especie);
+      const { data, error: e } = await supabase.from('especies').insert(dbData).select().single();
       if (e) throw e;
-      setEspecies(prev => [data as any, ...prev]);
-      return { success: true, data };
+      const converted = dbEspecieToApp(data) as AdminEspecie;
+      setEspecies(prev => [converted, ...prev]);
+      return { success: true, data: converted };
     } catch (err) {
       return { success: false, error: (err as Error).message };
     }
@@ -317,9 +357,12 @@ export function useAdminEspecies() {
       return { success: true };
     }
     try {
-      const { error: e } = await supabase.from('especies').update(updates as any).eq('id', id);
+      const dbData = especieToDb(updates);
+      // O id pode ser um slug, tentar buscar por slug primeiro
+      const { error: e } = await supabase.from('especies').update(dbData).eq('slug', id);
       if (e) throw e;
-      setEspecies(prev => prev.map(e => e.id === id ? { ...e, ...updates } : e));
+      // Re-buscar para pegar os dados atualizados
+      await buscar();
       return { success: true };
     } catch (err) {
       return { success: false, error: (err as Error).message };
@@ -332,7 +375,8 @@ export function useAdminEspecies() {
       return { success: true };
     }
     try {
-      const { error: e } = await supabase.from('especies').delete().eq('id', id);
+      // O id pode ser um slug
+      const { error: e } = await supabase.from('especies').delete().eq('slug', id);
       if (e) throw e;
       setEspecies(prev => prev.filter(e => e.id !== id));
       return { success: true };
@@ -341,7 +385,24 @@ export function useAdminEspecies() {
     }
   };
 
-  return { especies, isLoading, error, buscar, criar, atualizar, excluir };
+  // Upload de imagem para espécie
+  const uploadImagem = async (file: File, especieSlug: string) => {
+    if (!isSupabaseConfigured()) return { success: true, url: URL.createObjectURL(file) };
+    const ext = file.name.split('.').pop();
+    const fileName = `especies/${especieSlug}-${Date.now()}.${ext}`;
+    try {
+      const { error: uploadError } = await supabase.storage
+        .from('site_images')
+        .upload(fileName, file, { cacheControl: '3600', upsert: true });
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage.from('site_images').getPublicUrl(fileName);
+      return { success: true, url: urlData.publicUrl };
+    } catch (err) {
+      return { success: false, error: (err as Error).message, url: '' };
+    }
+  };
+
+  return { especies, isLoading, error, buscar, criar, atualizar, excluir, uploadImagem };
 }
 
 // ============================================================
