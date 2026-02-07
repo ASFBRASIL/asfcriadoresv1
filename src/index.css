@@ -39,6 +39,38 @@
     --asf-gray-medium: #6B7280;
   }
 
+  .dark {
+    --background: 0 0% 9%;
+    --foreground: 0 0% 95%;
+    --card: 0 0% 12%;
+    --card-foreground: 0 0% 95%;
+    --popover: 0 0% 12%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 152 38% 40%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 45 89% 50%;
+    --secondary-foreground: 0 0% 100%;
+    --destructive: 0 62.8% 50.6%;
+    --destructive-foreground: 0 0% 98%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 64%;
+    --accent: 0 0% 15%;
+    --accent-foreground: 0 0% 95%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 152 38% 40%;
+
+    --asf-green: #3D8563;
+    --asf-green-dark: #2F6B4F;
+    --asf-green-light: #4DA076;
+    --asf-yellow: #F4C430;
+    --asf-yellow-dark: #D9A91A;
+    --asf-yellow-light: #F9D868;
+    --asf-gray-light: #1a1a1a;
+    --asf-gray-dark: #f0f0f0;
+    --asf-gray-medium: #9CA3AF;
+  }
+
   * {
     @apply border-border;
   }
@@ -163,6 +195,14 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background-color: rgba(47, 107, 79, 0.5);
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background-color: rgba(61, 133, 99, 0.4);
 }
 
 /* Embla Carousel */

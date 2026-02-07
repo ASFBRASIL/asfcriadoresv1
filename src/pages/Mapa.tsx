@@ -9,6 +9,7 @@ import { useCriadores } from '../hooks/useCriadores';
 import { useAuth } from '../contexts/AuthContext';
 import { useFavoritos } from '../hooks/useWhatsApp';
 import { especies, buscarEspecies, getTodasEspeciesParaFiltro } from '../data/especies';
+import { useSEO } from '../hooks/useSEO';
 import 'leaflet/dist/leaflet.css';
 
 // Fix for default markers
@@ -43,6 +44,7 @@ function MapBounds() {
 }
 
 export function Mapa() {
+  useSEO({ title: 'Mapa de Criadores', description: 'Encontre criadores de abelhas sem ferrão perto de você com nosso mapa interativo. Filtre por espécie e região.' });
   const [searchTerm, setSearchTerm] = useState('');
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [selectedEspecies, setSelectedEspecies] = useState<string[]>([]);

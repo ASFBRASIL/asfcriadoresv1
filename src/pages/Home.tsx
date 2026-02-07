@@ -4,6 +4,7 @@ import { MapPin, Users, Leaf, ArrowRight, ChevronLeft, ChevronRight, Search, Mes
 import useEmblaCarousel from 'embla-carousel-react';
 import { motion } from 'framer-motion';
 import { useSiteConfig, type BannerItem } from '../hooks/useSiteConfig';
+import { useSEO } from '../hooks/useSEO';
 
 // Color map for dynamic banners
 const colorMap: Record<string, string> = {
@@ -44,6 +45,7 @@ const features = [
 export function Home() {
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
   const { config } = useSiteConfig();
+  useSEO({ title: 'Conectando Meliponicultores do Brasil', description: 'Plataforma de criadores de abelhas sem ferrão. Encontre meliponicultores, espécies nativas e conecte-se com a comunidade.' });
 
   // Build dynamic banners from site config
   const banners = useMemo(() => {

@@ -11,6 +11,8 @@ import { criadores as mockCriadores } from '../data/criadores';
 import { estados } from '../data/estados';
 import { getTodasEspeciesParaFiltro } from '../data/especies';
 import { useSEO } from '../hooks/useSEO';
+import { usePagination, PaginationControls } from '../hooks/usePagination';
+import { Skeleton } from '../components/ui/skeleton';
 
 export function Criadores() {
   const { user } = useAuth();
@@ -142,6 +144,7 @@ export function Criadores() {
   };
 
   const activeFilterCount = selectedEstados.length + selectedEspecies.length;
+  const pagination = usePagination(criadores, 12);
   const getAvaliacao = (c: any) => {
     const val = c.avaliacao ?? c.avaliacao_media ?? 0;
     return typeof val === 'string' ? parseFloat(val) : val;
@@ -313,12 +316,35 @@ export function Criadores() {
         </div>
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-16">
-            <div className="animate-spin w-10 h-10 border-4 border-[var(--asf-green)] border-t-transparent rounded-full" />
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden">
+                <div className="p-5 pb-3">
+                  <div className="flex items-start gap-3">
+                    <Skeleton className="w-14 h-14 rounded-xl flex-shrink-0" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-5 w-3/4" />
+                      <Skeleton className="h-4 w-1/2" />
+                      <Skeleton className="h-4 w-1/3" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-10 w-full mt-3" />
+                </div>
+                <div className="px-5 pb-3 flex gap-1.5">
+                  <Skeleton className="h-6 w-16 rounded-full" />
+                  <Skeleton className="h-6 w-16 rounded-full" />
+                </div>
+                <div className="px-5 pb-5 flex gap-2">
+                  <Skeleton className="h-10 flex-1 rounded-xl" />
+                  <Skeleton className="h-10 w-11 rounded-xl" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : criadores.length > 0 ? (
+          <>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {criadores.map((criador) => (
+            {pagination.items.map((criador) => (
               <div key={criador.id} className="bg-white rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300 group">
                 {/* Card Header */}
                 <Link to={`/perfil/${criador.id}`} className="block p-5 pb-3">
@@ -423,15 +449,17 @@ export function Criadores() {
               </div>
             ))}
           </div>
+          <PaginationControls {...pagination} />
+          </>
         ) : (
           <div className="text-center py-16">
-            <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
-              <Users className="w-10 h-10 text-gray-300" />
+            <div className="w-20 h-20 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center mx-auto mb-4">
+              <Users className="w-10 h-10 text-gray-300 dark:text-gray-500" />
             </div>
-            <h3 className="text-lg font-poppins font-semibold text-[var(--asf-gray-dark)] mb-2">
+            <h3 className="text-lg font-poppins font-semibold text-[var(--asf-gray-dark)] dark:text-gray-100 mb-2">
               Nenhum criador encontrado
             </h3>
-            <p className="text-[var(--asf-gray-medium)] mb-4">
+            <p className="text-[var(--asf-gray-medium)] dark:text-gray-400 mb-4">
               Tente ajustar os filtros ou buscar por outro nome/cidade.
             </p>
             <button onClick={clearFilters}

@@ -12,6 +12,7 @@ import { useWhatsApp, useFavoritos } from '../hooks/useWhatsApp';
 import { estados } from '../data/estados';
 import { especies as allEspeciesMock, buscarEspecies } from '../data/especies';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { useSEO } from '../hooks/useSEO';
 
 // Componente gerenciador de espécies do criador
 function EspecieManager({ criadorId, currentEspecies, onClose, onUpdate }: {
@@ -165,6 +166,7 @@ export function PerfilCriador() {
   const { id } = useParams<{ id: string }>();
   const { user, criador: criadorLogado } = useAuth();
   const { criador, especies, isLoading } = useCriador(id || null);
+  useSEO({ title: criador ? `${criador.nome} - Criador` : 'Perfil do Criador', description: criador ? `Conheça ${criador.nome}, meliponicultor de ${criador.cidade || ''}, ${criador.estado || ''}. Veja espécies, avaliações e entre em contato.` : undefined, type: 'profile' });
   const { avaliacoes, media, total, adicionarAvaliacao } = useAvaliacoes(id || null);
   const { updateCriador, isLoading: isUpdating } = useUpdateCriador();
   const { uploadAvatar, isLoading: isUploading } = useUploadAvatar();

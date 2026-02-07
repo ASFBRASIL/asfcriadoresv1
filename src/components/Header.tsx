@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, LogOut, User, Heart, Bell, Search } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotificacoes } from '../hooks/useNotificacoes';
+import { ThemeToggle } from './ThemeToggle';
 import { buscarEspecies } from '../data/especies';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { criadores as mockCriadores } from '../data/criadores';
@@ -76,6 +77,18 @@ export function Header() {
 
   const goSearch = (path: string) => { navigate(path); setSearchOpen(false); setSearchQuery(''); };
 
+  // Atalho global Ctrl+K / Cmd+K para abrir busca
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchOpen(prev => !prev);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
@@ -131,6 +144,11 @@ export function Header() {
               </Link>
             ))}
           </nav>
+
+          {/* Theme Toggle */}
+          <div className="hidden lg:block">
+            <ThemeToggle />
+          </div>
 
           {/* Global Search */}
           <div className="hidden lg:block relative" ref={searchRef}>
@@ -188,8 +206,9 @@ export function Header() {
               </div>
             ) : (
               <button onClick={() => setSearchOpen(true)}
-                className="p-2.5 rounded-xl text-[var(--asf-gray-medium)] hover:text-[var(--asf-green)] hover:bg-[var(--asf-green)]/10 transition-all" title="Buscar">
-                <Search className="w-5 h-5" />
+                className="flex items-center gap-2 px-3 py-2 rounded-xl text-[var(--asf-gray-medium)] hover:text-[var(--asf-green)] hover:bg-[var(--asf-green)]/10 transition-all border border-gray-200" title="Buscar (Ctrl+K)">
+                <Search className="w-4 h-4" />
+                <span className="text-xs text-gray-400">Ctrl+K</span>
               </button>
             )}
           </div>
@@ -327,6 +346,10 @@ export function Header() {
         }`}
       >
         <nav className="section-padding py-4 flex flex-col gap-2">
+          <div className="flex items-center justify-between pb-2 mb-2 border-b border-gray-100">
+            <span className="text-sm text-[var(--asf-gray-medium)]">Tema</span>
+            <ThemeToggle />
+          </div>
           {navLinks.map((link) => (
             <Link
               key={link.path}

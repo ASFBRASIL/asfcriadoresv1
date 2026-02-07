@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Check, Users, Star, TrendingUp, Shield, MapPin, Leaf, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { estados } from '../data/estados';
+import { useSEO } from '../hooks/useSEO';
 
 const benefits = [
   { icon: MapPin, title: 'Visibilidade Nacional', description: 'Seu meliponário visível para milhares de pessoas em todo o Brasil.' },
@@ -19,6 +20,7 @@ const testimonials = [
 ];
 
 export function SouCriador() {
+  useSEO({ title: 'Cadastre-se como Criador', description: 'Faça parte da maior comunidade de meliponicultores do Brasil. Cadastre-se gratuitamente e conecte-se com outros criadores.' });
   const [step, setStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);

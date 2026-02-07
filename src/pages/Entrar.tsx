@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Lock, Mail, ArrowRight, Chrome, AlertCircle, User, Phone, Check } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useSEO } from '../hooks/useSEO';
 
 type Tab = 'login' | 'cadastro';
 
 export function Entrar() {
+  useSEO({ title: 'Entrar', description: 'Faça login ou crie sua conta na ASF Criadores para acessar todas as funcionalidades da plataforma.' });
   const [tab, setTab] = useState<Tab>('login');
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);

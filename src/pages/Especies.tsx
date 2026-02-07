@@ -5,6 +5,7 @@ import { type Especie } from '../data/especies';
 import { useEspecies } from '../hooks/useEspecies';
 import { usePagination, PaginationControls } from '../hooks/usePagination';
 import { useSEO } from '../hooks/useSEO';
+import { Skeleton } from '../components/ui/skeleton';
 
 // Filter options
 const biomas = ['Amazônia', 'Mata Atlântica', 'Cerrado', 'Caatinga', 'Pantanal', 'Pampa'];
@@ -48,7 +49,7 @@ export function Especies() {
   const [selectedEspecie, setSelectedEspecie] = useState<Especie | null>(null);
 
   // Buscar espécies do Supabase (o hook já aplica filtros server-side ou client-side)
-  const { especies: filteredEspecies, totalCatalogadas } = useEspecies({
+  const { especies: filteredEspecies, totalCatalogadas, isLoading } = useEspecies({
     biomas: selectedBiomas.length > 0 ? selectedBiomas : undefined,
     tamanhos: selectedTamanhos.length > 0 ? selectedTamanhos : undefined,
     dificuldades: selectedDificuldades.length > 0 ? selectedDificuldades : undefined,
@@ -363,7 +364,31 @@ export function Especies() {
               )}
             </div>
 
-            {filteredEspecies.length > 0 ? (
+            {isLoading ? (
+              <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="rounded-2xl overflow-hidden border-2 border-gray-200 dark:border-gray-700">
+                    <Skeleton className="h-56 w-full" />
+                    <div className="p-5 space-y-3">
+                      <div className="flex gap-2">
+                        <Skeleton className="h-6 w-16 rounded-full" />
+                        <Skeleton className="h-6 w-20 rounded-full" />
+                      </div>
+                      <Skeleton className="h-6 w-3/4" />
+                      <Skeleton className="h-4 w-1/2" />
+                      <div className="flex gap-2">
+                        <Skeleton className="h-5 w-14 rounded-full" />
+                        <Skeleton className="h-5 w-14 rounded-full" />
+                      </div>
+                      <div className="flex gap-4">
+                        <Skeleton className="h-4 w-16" />
+                        <Skeleton className="h-4 w-16" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : filteredEspecies.length > 0 ? (
               <>
               <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6">
                 {pagination.items.map((especie) => (

@@ -65,7 +65,7 @@ export function PaginationControls({ page, totalPages, totalItems, hasNext, hasP
       </p>
       <div className="flex items-center gap-1">
         <button onClick={prev} disabled={!hasPrev}
-          className="px-3 py-2 rounded-lg text-sm font-medium disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors">
+          className="px-3 py-2 rounded-lg text-sm font-medium disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-400 transition-colors">
           ← Anterior
         </button>
         {getPages().map((p, i) =>
@@ -74,14 +74,14 @@ export function PaginationControls({ page, totalPages, totalItems, hasNext, hasP
           ) : (
             <button key={p} onClick={() => goTo(p as number)}
               className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors ${
-                p === page ? 'bg-[var(--asf-green)] text-white' : 'hover:bg-gray-100 text-[var(--asf-gray-medium)]'
+                p === page ? 'bg-[var(--asf-green)] dark:bg-[var(--asf-green)] text-white' : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-[var(--asf-gray-medium)] dark:text-gray-400'
               }`}>
               {p}
             </button>
           )
         )}
         <button onClick={next} disabled={!hasNext}
-          className="px-3 py-2 rounded-lg text-sm font-medium disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors">
+          className="px-3 py-2 rounded-lg text-sm font-medium disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-400 transition-colors">
           Próxima →
         </button>
       </div>

@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom';
 import { Home, ArrowLeft, Search } from 'lucide-react';
+import { useSEO } from '../hooks/useSEO';
 
 export function NotFound() {
+  useSEO({ title: 'Página não encontrada' });
   return (
     <div className="min-h-screen pt-20 lg:pt-24 flex items-center justify-center bg-[var(--asf-gray-light)]">
       <div className="container-asf section-padding">

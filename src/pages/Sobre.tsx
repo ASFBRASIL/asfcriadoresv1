@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Heart, Users, Leaf, MapPin, ArrowRight, Quote, Target, Eye } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useSEO } from '../hooks/useSEO';
 
 const values = [
   {
@@ -44,6 +45,7 @@ const team = [
 ];
 
 export function Sobre() {
+  useSEO({ title: 'Sobre Nós', description: 'Conheça a missão da ASF Criadores: conectar meliponicultores e preservar as abelhas sem ferrão do Brasil.' });
   return (
     <div className="min-h-screen pt-20 lg:pt-24">
       {/* Hero */}
