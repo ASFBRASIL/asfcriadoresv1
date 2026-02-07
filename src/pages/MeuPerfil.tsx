@@ -1,11 +1,12 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  MapPin, Phone, Star, Edit2, Camera, Save, X, Leaf, Check,
+  MapPin, Phone, Star, Edit2, Save, X, Leaf, Check,
   Eye, LogOut, Settings, User, Mail, MessageCircle, Search, ChevronRight
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useUpdateCriador, useUploadAvatar } from '../hooks/useCriadores';
+import { ImageUploader } from '../components/ImageUploader';
 import { estados } from '../data/estados';
 import { especies as allEspeciesMock, buscarEspecies } from '../data/especies';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
@@ -114,7 +115,7 @@ function EspecieManager({ criadorId, currentEspecies, onClose, onUpdate }: {
 export function MeuPerfil() {
   const { user, criador, signOut, refreshCriador, isAdmin, isCriadorLoading } = useAuth();
   const { updateCriador, isLoading: isUpdating } = useUpdateCriador();
-  const { uploadAvatar, isLoading: isUploading } = useUploadAvatar();
+  const { uploadAvatar } = useUploadAvatar();
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState<'perfil' | 'especies' | 'config'>('perfil');
@@ -124,8 +125,7 @@ export function MeuPerfil() {
   const [especies, setEspecies] = useState<any[]>([]);
   const [loadingEspecies, setLoadingEspecies] = useState(true);
   const [saveMsg, setSaveMsg] = useState('');
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  // avatarPreview agora é gerenciado pelo ImageUploader internamente
 
   // Carregar espécies do criador
   useEffect(() => {
@@ -268,40 +268,29 @@ export function MeuPerfil() {
     }
   };
 
-  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
-
-    // Preview local imediato
-    const localPreview = URL.createObjectURL(file);
-    setAvatarPreview(localPreview);
+  const handleAvatarUpload = async (file: File): Promise<string | null> => {
+    if (!user) return null;
     setSaveMsg('Enviando foto...');
 
     const url = await uploadAvatar(file, user.id);
     if (url) {
-      // Adicionar cache-buster para garantir que o browser busque a nova imagem
       const cacheBustUrl = url + '?t=' + Date.now();
       const { error } = await updateCriador(criador.id, { avatar_url: cacheBustUrl });
       if (!error) {
         setSaveMsg('Foto de perfil atualizada!');
         setTimeout(() => setSaveMsg(''), 3000);
         await refreshCriador();
-        // Limpar preview local após refresh trazer o avatar do servidor
-        setTimeout(() => setAvatarPreview(null), 500);
+        return cacheBustUrl;
       } else {
         setSaveMsg('Erro ao salvar foto. Tente novamente.');
         setTimeout(() => setSaveMsg(''), 3000);
-        setAvatarPreview(null);
+        return null;
       }
     } else {
       setSaveMsg('Erro ao fazer upload da foto. Tente novamente.');
       setTimeout(() => setSaveMsg(''), 3000);
-      setAvatarPreview(null);
+      return null;
     }
-    // Limpar input para permitir re-selecionar o mesmo arquivo
-    if (fileInputRef.current) fileInputRef.current.value = '';
-    // Revogar URL local para liberar memória
-    URL.revokeObjectURL(localPreview);
   };
 
   const handleToggleStatus = (status: string) => {
@@ -337,30 +326,13 @@ export function MeuPerfil() {
         <div className="container-asf section-padding py-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
             {/* Avatar */}
-            <div className="relative">
-              <div className="w-20 h-20 rounded-2xl bg-[var(--asf-green)]/10 flex items-center justify-center overflow-hidden">
-                {(avatarPreview || criador.avatar_url) ? (
-                  <img src={avatarPreview || criador.avatar_url} alt={criador.nome} className="w-full h-full object-cover" />
-                ) : (
-                  <span className="text-2xl font-bold text-[var(--asf-green)]">
-                    {criador.nome.charAt(0)}
-                  </span>
-                )}
-                {isUploading && (
-                  <div className="absolute inset-0 bg-black/40 rounded-2xl flex items-center justify-center">
-                    <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  </div>
-                )}
-              </div>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="absolute -bottom-2 -right-2 w-10 h-10 rounded-full bg-[var(--asf-green)] text-white flex items-center justify-center hover:bg-[var(--asf-green-dark)] transition-colors shadow-md"
-                disabled={isUploading}
-              >
-                <Camera className="w-4.5 h-4.5" />
-              </button>
-              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
-            </div>
+            <ImageUploader
+              value={criador.avatar_url}
+              onUpload={handleAvatarUpload}
+              mode="avatar"
+              maxWidth={400}
+              quality={0.85}
+            />
 
             {/* Info */}
             <div className="flex-1">

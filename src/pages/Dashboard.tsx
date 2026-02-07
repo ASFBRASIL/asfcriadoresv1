@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Users, Leaf, Star, MessageSquare,
@@ -13,6 +13,7 @@ import {
   type AdminCriador, type AdminEspecie,
 } from '../hooks/useAdmin';
 import { useAdminSiteConfig, type BannerItem } from '../hooks/useSiteConfig';
+import { ImageUploader } from '../components/ImageUploader';
 import { estados } from '../data/estados';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
@@ -251,9 +252,6 @@ function TabEspecies({ showToast }: { showToast: (m: string, t?: 'success' | 'er
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [delId, setDelId] = useState<string | null>(null);
-  const [imgUploading, setImgUploading] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
-
   const emptyForm = {
     id: '', nomeCientifico: '', nomesPopulares: '', familia: 'Apidae',
     tamanho: 'média', producaoMel: 'média', comportamento: '',
@@ -285,20 +283,17 @@ function TabEspecies({ showToast }: { showToast: (m: string, t?: 'success' | 'er
     setEditingId(e.id); setShowForm(true);
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setImgUploading(true);
+  const handleImageUpload = async (file: File): Promise<string | null> => {
     const slug = form.nomeCientifico.toLowerCase().replace(/\s+/g, '-') || 'especie';
     const result = await uploadImagem(file, slug);
     if (result.success && result.url) {
-      setForm({ ...form, imagemUrl: result.url });
+      setForm(prev => ({ ...prev, imagemUrl: result.url! }));
       showToast('Imagem enviada!');
+      return result.url;
     } else {
       showToast('Erro ao enviar imagem.', 'error');
+      return null;
     }
-    setImgUploading(false);
-    if (fileRef.current) fileRef.current.value = '';
   };
 
   const submit = async () => {
@@ -340,33 +335,14 @@ function TabEspecies({ showToast }: { showToast: (m: string, t?: 'success' | 'er
           <h3 className="font-poppins font-semibold mb-4">{editingId ? 'Editar' : 'Nova'} Espécie</h3>
           <div className="space-y-4">
             {/* Imagem da espécie */}
-            <div>
-              <label className="block text-sm text-[var(--asf-gray-medium)] mb-2">Imagem da Espécie</label>
-              <div className="flex items-start gap-4">
-                <div className="w-32 h-24 rounded-xl border-2 border-dashed border-gray-200 overflow-hidden bg-gray-50 flex items-center justify-center flex-shrink-0">
-                  {form.imagemUrl ? (
-                    <img src={form.imagemUrl} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <Image className="w-8 h-8 text-gray-300" />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-                  <button
-                    onClick={() => fileRef.current?.click()}
-                    disabled={imgUploading}
-                    className="px-4 py-2 rounded-xl bg-gray-100 text-sm font-medium hover:bg-gray-200 flex items-center gap-2 disabled:opacity-50"
-                  >
-                    {imgUploading ? <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" /> : <Upload className="w-4 h-4" />}
-                    {imgUploading ? 'Enviando...' : 'Enviar imagem'}
-                  </button>
-                  {form.imagemUrl && (
-                    <button onClick={() => setForm({ ...form, imagemUrl: '' })} className="mt-1 text-xs text-red-500 hover:underline">Remover imagem</button>
-                  )}
-                  <p className="text-xs text-[var(--asf-gray-medium)] mt-1">JPG, PNG ou WebP. Máximo 5MB.</p>
-                </div>
-              </div>
-            </div>
+            <ImageUploader
+              label="Imagem da Espécie"
+              value={form.imagemUrl}
+              onUpload={handleImageUpload}
+              onRemove={() => setForm({ ...form, imagemUrl: '' })}
+              aspect="16/9"
+              className="max-w-sm"
+            />
 
             <div className="grid sm:grid-cols-2 gap-4">
               <div><label className="block text-sm text-[var(--asf-gray-medium)] mb-1">Nome Científico *</label><input value={form.nomeCientifico} onChange={e => setForm({ ...form, nomeCientifico: e.target.value })} placeholder="Tetragonisca angustula" className="w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:border-[var(--asf-green)] outline-none text-sm" /></div>
@@ -433,8 +409,6 @@ function TabConteudo({ showToast }: { showToast: (m: string, t?: 'success' | 'er
   const [editValor, setEditValor] = useState<any>(null);
   const [bannerEdit, setBannerEdit] = useState<number | null>(null);
   const [bannerForm, setBannerForm] = useState<BannerItem>({ titulo: '', descricao: '', cta: '', link: '/', cor: 'green', ativo: true });
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
 
   useEffect(() => { buscar(); }, [buscar]);
 
@@ -448,19 +422,16 @@ function TabConteudo({ showToast }: { showToast: (m: string, t?: 'success' | 'er
     r.success ? (showToast('Salvo!'), setEditChave(null)) : showToast('Erro ao salvar.', 'error');
   };
 
-  const handleUpload = async (chave: string, e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
+  const handleUpload = async (chave: string, file: File): Promise<string | null> => {
     const result = await uploadImagem(file, chave);
     if (result.success && result.url) {
       await atualizar(chave, result.url);
       showToast('Imagem atualizada!');
+      return result.url;
     } else {
       showToast('Erro ao enviar.', 'error');
+      return null;
     }
-    setUploading(false);
-    if (fileRef.current) fileRef.current.value = '';
   };
 
   const saveBanner = async (index: number) => {
@@ -562,26 +533,15 @@ function TabConteudo({ showToast }: { showToast: (m: string, t?: 'success' | 'er
       {/* Imagens do Site */}
       <div className="bg-white rounded-2xl p-6 border border-gray-100">
         <h3 className="font-poppins font-semibold text-[var(--asf-gray-dark)] mb-5 flex items-center gap-2"><Upload className="w-5 h-5 text-[var(--asf-yellow-dark)]" /> Imagens do Site</h3>
-        <input ref={fileRef} type="file" accept="image/*" className="hidden" />
         <div className="grid sm:grid-cols-2 gap-4">
           {imagens.map(cfg => (
             <div key={cfg.chave} className="border border-gray-200 rounded-xl p-4">
-              <label className="block text-sm font-medium text-[var(--asf-gray-dark)] mb-2">{cfg.descricao || cfg.chave}</label>
-              <div className="flex items-start gap-3">
-                <div className="w-24 h-20 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
-                  {cfg.valor ? <img src={typeof cfg.valor === 'string' ? cfg.valor : ''} alt="" className="w-full h-full object-cover" /> : <Image className="w-6 h-6 text-gray-300 m-auto mt-6" />}
-                </div>
-                <div>
-                  <label className="cursor-pointer">
-                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleUpload(cfg.chave, e)} />
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 text-sm font-medium hover:bg-gray-200 cursor-pointer">
-                      {uploading ? <div className="w-3.5 h-3.5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-                      Alterar
-                    </span>
-                  </label>
-                  <p className="text-xs text-[var(--asf-gray-medium)] mt-1">5MB máx. JPG, PNG, WebP</p>
-                </div>
-              </div>
+              <ImageUploader
+                label={cfg.descricao || cfg.chave}
+                value={typeof cfg.valor === 'string' ? cfg.valor : undefined}
+                onUpload={(file) => handleUpload(cfg.chave, file)}
+                aspect="16/9"
+              />
             </div>
           ))}
         </div>
