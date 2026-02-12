@@ -24,6 +24,16 @@ const conservacao = [
   { value: 'vulnerável', label: 'Vulnerável' },
   { value: 'ameaçada', label: 'Ameaçada' },
 ];
+const generos = [
+  { value: 'Melipona', label: 'Melipona' },
+  { value: 'Tetragonisca', label: 'Tetragonisca' },
+  { value: 'Scaptotrigona', label: 'Scaptotrigona' },
+  { value: 'Frieseomelitta', label: 'Frieseomelitta' },
+  { value: 'Plebeia', label: 'Plebeia' },
+  { value: 'Trigona', label: 'Trigona' },
+  { value: 'Partamona', label: 'Partamona' },
+  { value: 'Nannotrigona', label: 'Nannotrigona' },
+];
 
 // Status colors
 const statusColors = {
@@ -46,6 +56,7 @@ export function Especies() {
   const [selectedTamanhos, setSelectedTamanhos] = useState<string[]>([]);
   const [selectedDificuldades, setSelectedDificuldades] = useState<string[]>([]);
   const [selectedConservacao, setSelectedConservacao] = useState<string[]>([]);
+  const [selectedGeneros, setSelectedGeneros] = useState<string[]>([]);
   const [selectedEspecie, setSelectedEspecie] = useState<Especie | null>(null);
 
   // Buscar espécies do Supabase (o hook já aplica filtros server-side ou client-side)
@@ -54,6 +65,7 @@ export function Especies() {
     tamanhos: selectedTamanhos.length > 0 ? selectedTamanhos : undefined,
     dificuldades: selectedDificuldades.length > 0 ? selectedDificuldades : undefined,
     conservacao: selectedConservacao.length > 0 ? selectedConservacao : undefined,
+    generos: selectedGeneros.length > 0 ? selectedGeneros : undefined,
     query: searchTerm.trim() || undefined,
   });
 
@@ -82,8 +94,14 @@ export function Especies() {
   };
 
   const toggleConservacao = (status: string) => {
-    setSelectedConservacao(prev => 
+    setSelectedConservacao(prev =>
       prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status]
+    );
+  };
+
+  const toggleGenero = (genero: string) => {
+    setSelectedGeneros(prev =>
+      prev.includes(genero) ? prev.filter(g => g !== genero) : [...prev, genero]
     );
   };
 
@@ -93,12 +111,14 @@ export function Especies() {
     setSelectedTamanhos([]);
     setSelectedDificuldades([]);
     setSelectedConservacao([]);
+    setSelectedGeneros([]);
     setSearchTerm('');
   };
 
   // Total active filters
-  const activeFiltersCount = selectedBiomas.length + selectedTamanhos.length + 
-                            selectedDificuldades.length + selectedConservacao.length;
+  const activeFiltersCount = selectedBiomas.length + selectedTamanhos.length +
+                            selectedDificuldades.length + selectedConservacao.length +
+                            selectedGeneros.length;
 
   return (
     <div className="min-h-screen pt-20 lg:pt-24 pb-16 bg-[var(--asf-gray-light)]">
@@ -343,6 +363,41 @@ export function Especies() {
                     ))}
                   </div>
                 </div>
+
+                {/* Genus Filter */}
+                <div>
+                  <h4 className="text-sm font-medium text-[var(--asf-gray-dark)] mb-2 flex items-center gap-2">
+                    <Beaker className="w-4 h-4 text-[var(--asf-green)]" />
+                    Gênero
+                  </h4>
+                  <div className="space-y-1">
+                    {generos.map((gen) => (
+                      <button
+                        key={gen.value}
+                        onClick={() => toggleGenero(gen.value)}
+                        className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm
+                                 transition-colors duration-200 ${
+                          selectedGeneros.includes(gen.value)
+                            ? 'bg-[var(--asf-green)]/10 text-[var(--asf-green)]'
+                            : 'hover:bg-gray-50 text-[var(--asf-gray-dark)]'
+                        }`}
+                      >
+                        <div className={`w-4 h-4 rounded border flex items-center justify-center ${
+                          selectedGeneros.includes(gen.value)
+                            ? 'bg-[var(--asf-green)] border-[var(--asf-green)]'
+                            : 'border-gray-300'
+                        }`}>
+                          {selectedGeneros.includes(gen.value) && (
+                            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </div>
+                        <span className="italic">{gen.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -427,9 +482,14 @@ export function Especies() {
                       <h3 className="font-poppins font-bold text-xl text-white mb-1 drop-shadow-lg">
                         {especie.nomesPopulares[0]}
                       </h3>
-                      <p className="text-sm italic text-white/80 mb-3 drop-shadow">
+                      <p className="text-sm italic text-white/80 mb-1 drop-shadow">
                         {especie.nomeCientifico}
                       </p>
+                      {especie.genero && (
+                        <p className="text-xs text-white/60 mb-2 drop-shadow">
+                          Gênero: <span className="italic">{especie.genero}</span>
+                        </p>
+                      )}
 
                       {/* Tags */}
                       <div className="flex flex-wrap gap-1.5 mb-3">
@@ -541,6 +601,18 @@ export function Especies() {
                 </span>
               </div>
 
+              {/* Genus/Subgenus */}
+              {selectedEspecie.genero && (
+                <div className="mb-4">
+                  <p className="text-sm text-[var(--asf-gray-medium)]">
+                    Gênero: <span className="italic font-medium text-[var(--asf-gray-dark)]">{selectedEspecie.genero}</span>
+                    {selectedEspecie.subgenero && (
+                      <> &middot; Subgênero: <span className="italic font-medium text-[var(--asf-gray-dark)]">{selectedEspecie.subgenero}</span></>
+                    )}
+                  </p>
+                </div>
+              )}
+
               {/* Alternative Names */}
               {selectedEspecie.nomesPopulares.length > 1 && (
                 <div className="mb-6">
@@ -550,6 +622,22 @@ export function Especies() {
                   <div className="flex flex-wrap gap-2">
                     {selectedEspecie.nomesPopulares.slice(1).map((nome) => (
                       <span key={nome} className="px-3 py-1 rounded-lg bg-gray-100 text-gray-700 text-sm">
+                        {nome}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Nomes Alternativos */}
+              {selectedEspecie.nomesAlternativos && selectedEspecie.nomesAlternativos.length > 0 && (
+                <div className="mb-6">
+                  <h4 className="text-sm font-medium text-[var(--asf-gray-medium)] mb-2">
+                    Nomes alternativos / regionais
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedEspecie.nomesAlternativos.map((nome) => (
+                      <span key={nome} className="px-3 py-1 rounded-lg bg-purple-50 text-purple-700 text-sm">
                         {nome}
                       </span>
                     ))}
@@ -589,9 +677,23 @@ export function Especies() {
                   Mel
                 </h4>
                 <p className="text-[var(--asf-gray-medium)] mb-3">{selectedEspecie.mel.descricao}</p>
-                <div className="mb-3">
-                  <span className="text-sm font-medium text-[var(--asf-gray-dark)]">Sabor: </span>
-                  <span className="text-[var(--asf-gray-medium)]">{selectedEspecie.mel.sabor}</span>
+                <div className="grid sm:grid-cols-2 gap-2 mb-3">
+                  <div>
+                    <span className="text-sm font-medium text-[var(--asf-gray-dark)]">Sabor: </span>
+                    <span className="text-[var(--asf-gray-medium)]">{selectedEspecie.mel.sabor}</span>
+                  </div>
+                  {selectedEspecie.mel.cor && (
+                    <div>
+                      <span className="text-sm font-medium text-[var(--asf-gray-dark)]">Cor: </span>
+                      <span className="text-[var(--asf-gray-medium)]">{selectedEspecie.mel.cor}</span>
+                    </div>
+                  )}
+                  {selectedEspecie.mel.producaoAnual && (
+                    <div>
+                      <span className="text-sm font-medium text-[var(--asf-gray-dark)]">Produção anual: </span>
+                      <span className="text-[var(--asf-gray-medium)]">{selectedEspecie.mel.producaoAnual}</span>
+                    </div>
+                  )}
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {selectedEspecie.mel.propriedades.map((prop, i) => (

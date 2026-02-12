@@ -71,15 +71,30 @@ export function useDashboardStats() {
       }
 
       try {
+        // Tentar usar RPC estatisticas_catalogo para espécies
+        let catalogoStats: any = null;
+        try {
+          const { data: catData } = await supabase.rpc('estatisticas_catalogo');
+          catalogoStats = catData;
+        } catch {
+          // RPC pode não existir ainda, continuar sem ela
+        }
+
         // Total de criadores
         const { count: totalCriadores } = await supabase
           .from('criadores')
           .select('*', { count: 'exact', head: true });
 
-        // Total de espécies
-        const { count: totalEspecies } = await supabase
-          .from('especies')
-          .select('*', { count: 'exact', head: true });
+        // Total de espécies (usa catálogo se disponível, senão conta direto)
+        let totalEspecies = 0;
+        if (catalogoStats && catalogoStats.total_especies != null) {
+          totalEspecies = catalogoStats.total_especies;
+        } else {
+          const { count } = await supabase
+            .from('especies')
+            .select('*', { count: 'exact', head: true });
+          totalEspecies = count || 0;
+        }
 
         // Total de avaliações
         const { count: totalAvaliacoes } = await supabase
@@ -101,14 +116,22 @@ export function useDashboardStats() {
           .sort((a, b) => b.count - a.count)
           .slice(0, 10);
 
+        // Espécies mais populares do catálogo
+        const especiesMaisPopulares = catalogoStats?.especies_por_genero
+          ? Object.entries(catalogoStats.especies_por_genero as Record<string, number>)
+              .map(([especie, count]) => ({ especie, count }))
+              .sort((a, b) => b.count - a.count)
+              .slice(0, 5)
+          : [];
+
         setStats({
           totalCriadores: totalCriadores || 0,
-          totalEspecies: totalEspecies || 0,
+          totalEspecies,
           totalAvaliacoes: totalAvaliacoes || 0,
           totalContatos: 0,
           criadoresPorEstado,
           criadoresPorMes: [],
-          especiesMaisPopulares: [],
+          especiesMaisPopulares,
           avaliacoesPorNota: [],
         });
       } catch (err) {

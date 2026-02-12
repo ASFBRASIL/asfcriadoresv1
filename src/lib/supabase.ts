@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import type { Database } from './database.types';
 
 // Credenciais do Supabase - devem ser configuradas via variáveis de ambiente
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -13,7 +14,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
-export const supabase = createClient(
+export const supabase = createClient<Database>(
   supabaseUrl || '',
   supabaseAnonKey || ''
 );
@@ -55,7 +56,10 @@ export type Especie = {
   slug: string;
   nome_cientifico: string;
   nomes_populares: string[];
+  nomes_alternativos: string[] | null;
   familia: string;
+  genero: string | null;
+  subgenero: string | null;
   tamanho: 'pequena' | 'média' | 'grande';
   producao_mel: 'baixa' | 'média' | 'alta' | 'muito alta';
   distribuicao: string[];
@@ -65,6 +69,8 @@ export type Especie = {
   mel_descricao: string;
   mel_propriedades: string[];
   mel_sabor: string;
+  mel_cor: string | null;
+  mel_producao_anual: string | null;
   manejo_dificuldade: 'iniciante' | 'intermediário' | 'avançado';
   manejo_caixa: string;
   manejo_temperamento: string;
@@ -73,6 +79,7 @@ export type Especie = {
   conservacao_ameacas: string[];
   imagem_url?: string;
   fontes: string[];
+  status_pesquisa: string | null;
   created_at: string;
 };
 
@@ -82,7 +89,10 @@ export function dbEspecieToApp(row: any) {
     id: row.slug || row.id,
     nomeCientifico: row.nome_cientifico,
     nomesPopulares: row.nomes_populares || [],
+    nomesAlternativos: row.nomes_alternativos || [],
     familia: row.familia || 'Apidae',
+    genero: row.genero || null,
+    subgenero: row.subgenero || null,
     tamanho: row.tamanho || 'média',
     producaoMel: row.producao_mel || 'média',
     distribuicao: row.distribuicao || [],
@@ -93,6 +103,8 @@ export function dbEspecieToApp(row: any) {
       descricao: row.mel_descricao || '',
       propriedades: row.mel_propriedades || [],
       sabor: row.mel_sabor || '',
+      cor: row.mel_cor || null,
+      producaoAnual: row.mel_producao_anual || null,
     },
     manejo: {
       dificuldade: row.manejo_dificuldade || 'intermediário',
@@ -106,6 +118,7 @@ export function dbEspecieToApp(row: any) {
     },
     imagem: row.imagem_url,
     fontes: row.fontes || [],
+    statusPesquisa: row.status_pesquisa || null,
   };
 }
 
@@ -125,6 +138,7 @@ export type Avaliacao = {
   criador_id: string;
   autor_id: string;
   autor_nome: string;
+  autor_avatar?: string;
   nota: number;
   comentario?: string;
   created_at: string;

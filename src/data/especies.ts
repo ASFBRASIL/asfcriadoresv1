@@ -5,7 +5,10 @@ export interface Especie {
   id: string;
   nomeCientifico: string;
   nomesPopulares: string[];
+  nomesAlternativos?: string[];
   familia: string;
+  genero?: string;
+  subgenero?: string;
   tamanho: 'pequena' | 'média' | 'grande';
   producaoMel: 'baixa' | 'média' | 'alta' | 'muito alta';
   distribuicao: string[];
@@ -16,6 +19,8 @@ export interface Especie {
     descricao: string;
     propriedades: string[];
     sabor: string;
+    cor?: string;
+    producaoAnual?: string;
   };
   manejo: {
     dificuldade: 'iniciante' | 'intermediário' | 'avançado';
@@ -29,14 +34,17 @@ export interface Especie {
   };
   imagem?: string;
   fontes: string[];
+  statusPesquisa?: string;
 }
 
 export const especies: Especie[] = [
   {
     id: 'tetragonisca-angustula',
     nomeCientifico: 'Tetragonisca angustula',
-    nomesPopulares: ['Jataí', 'Abelha-ouro', 'Mariola', 'Moça-branca', 'Jaty', 'Maria-seca', 'Mosquito-amarelo'],
+    nomesPopulares: ['Jataí', 'Abelha-ouro', 'Mariola'],
+    nomesAlternativos: ['Moça-branca', 'Jaty', 'Maria-seca', 'Mosquito-amarelo'],
     familia: 'Apidae',
+    genero: 'Tetragonisca',
     tamanho: 'pequena',
     producaoMel: 'média',
     distribuicao: ['Nacional'],
@@ -52,7 +60,9 @@ export const especies: Especie[] = [
     mel: {
       descricao: 'Mel claro a âmbar, de consistência fluida',
       propriedades: ['Alto teor de água', 'Propriedades antibacterianas', 'Rico em minerais'],
-      sabor: 'Doce suave, levemente ácido, com notas florais'
+      sabor: 'Doce suave, levemente ácido, com notas florais',
+      cor: 'Claro a âmbar',
+      producaoAnual: '1-2 litros por colônia'
     },
     manejo: {
       dificuldade: 'iniciante',
@@ -70,8 +80,10 @@ export const especies: Especie[] = [
   {
     id: 'melipona-scutellaris',
     nomeCientifico: 'Melipona scutellaris',
-    nomesPopulares: ['Uruçu-verdadeira', 'Uruçu-nordestina', 'Uruçu-verdadeira'],
+    nomesPopulares: ['Uruçu-verdadeira', 'Uruçu-nordestina'],
+    nomesAlternativos: ['Uruçu', 'Uruçu-do-nordeste'],
     familia: 'Apidae',
+    genero: 'Melipona',
     tamanho: 'grande',
     producaoMel: 'muito alta',
     distribuicao: ['Nordeste', 'Bahia', 'Sergipe', 'Alagoas', 'Pernambuco', 'Paraíba', 'Rio Grande do Norte'],
@@ -87,7 +99,9 @@ export const especies: Especie[] = [
     mel: {
       descricao: 'Mel âmbar escuro, de alta qualidade',
       propriedades: ['Alto teor de açúcares', 'Propriedades cicatrizantes', 'Rico em antioxidantes'],
-      sabor: 'Doce intenso, sabor marcante e persistente'
+      sabor: 'Doce intenso, sabor marcante e persistente',
+      cor: 'Âmbar escuro',
+      producaoAnual: '3-8 litros por colônia'
     },
     manejo: {
       dificuldade: 'intermediário',
@@ -105,8 +119,10 @@ export const especies: Especie[] = [
   {
     id: 'melipona-mandacaia',
     nomeCientifico: 'Melipona quadrifasciata',
-    nomesPopulares: ['Mandaçaia', 'Mandaçaia-grande', 'Uruçu-amarela'],
+    nomesPopulares: ['Mandaçaia', 'Mandaçaia-grande'],
+    nomesAlternativos: ['Uruçu-amarela'],
     familia: 'Apidae',
+    genero: 'Melipona',
     tamanho: 'grande',
     producaoMel: 'alta',
     distribuicao: ['Sul', 'Sudeste', 'Centro-Oeste', 'Minas Gerais', 'São Paulo', 'Paraná', 'Santa Catarina', 'Rio Grande do Sul'],
@@ -122,7 +138,9 @@ export const especies: Especie[] = [
     mel: {
       descricao: 'Mel claro a âmbar, de boa qualidade',
       propriedades: ['Bom teor de açúcares', 'Propriedades antimicrobianas'],
-      sabor: 'Doce equilibrado, levemente floral'
+      sabor: 'Doce equilibrado, levemente floral',
+      cor: 'Claro a âmbar',
+      producaoAnual: '2-5 litros por colônia'
     },
     manejo: {
       dificuldade: 'intermediário',
@@ -141,7 +159,9 @@ export const especies: Especie[] = [
     id: 'melipona-subnitida',
     nomeCientifico: 'Melipona subnitida',
     nomesPopulares: ['Jandaíra'],
+    nomesAlternativos: ['Jandaíra-do-nordeste'],
     familia: 'Apidae',
+    genero: 'Melipona',
     tamanho: 'média',
     producaoMel: 'média',
     distribuicao: ['Nordeste', 'Ceará', 'Rio Grande do Norte', 'Paraíba', 'Pernambuco', 'Alagoas', 'Sergipe'],
@@ -157,7 +177,9 @@ export const especies: Especie[] = [
     mel: {
       descricao: 'Mel âmbar, muito valorizado medicinalmente',
       propriedades: ['Propriedades cicatrizantes comprovadas', 'Ação antibacteriana', 'Usado em tratamentos de feridas'],
-      sabor: 'Doce intenso, com notas de flores do caatinga'
+      sabor: 'Doce intenso, com notas de flores do caatinga',
+      cor: 'Âmbar',
+      producaoAnual: '1-3 litros por colônia'
     },
     manejo: {
       dificuldade: 'intermediário',
@@ -175,8 +197,10 @@ export const especies: Especie[] = [
   {
     id: 'melipona-bicolor',
     nomeCientifico: 'Melipona bicolor',
-    nomesPopulares: ['Guaraipo', 'Guarupu', 'Guaráipo'],
+    nomesPopulares: ['Guaraipo', 'Guarupu'],
+    nomesAlternativos: ['Guaráipo'],
     familia: 'Apidae',
+    genero: 'Melipona',
     tamanho: 'grande',
     producaoMel: 'média',
     distribuicao: ['Sul', 'Sudeste', 'Paraná', 'Santa Catarina', 'Rio Grande do Sul', 'São Paulo', 'Rio de Janeiro'],
@@ -211,7 +235,9 @@ export const especies: Especie[] = [
     id: 'scaptotrigona-postica',
     nomeCientifico: 'Scaptotrigona postica',
     nomesPopulares: ['Mandaguari', 'Mandaguari-comum'],
+    nomesAlternativos: [],
     familia: 'Apidae',
+    genero: 'Scaptotrigona',
     tamanho: 'média',
     producaoMel: 'média',
     distribuicao: ['Nacional'],
@@ -245,8 +271,10 @@ export const especies: Especie[] = [
   {
     id: 'scaptotrigona-bipunctata',
     nomeCientifico: 'Scaptotrigona bipunctata',
-    nomesPopulares: ['Tubuna', 'Canudo', 'Tapesuá'],
+    nomesPopulares: ['Tubuna', 'Canudo'],
+    nomesAlternativos: ['Tapesuá'],
     familia: 'Apidae',
+    genero: 'Scaptotrigona',
     tamanho: 'média',
     producaoMel: 'média',
     distribuicao: ['Norte', 'Nordeste', 'Centro-Oeste', 'Pará', 'Maranhão', 'Piauí', 'Ceará', 'Mato Grosso'],
@@ -280,8 +308,10 @@ export const especies: Especie[] = [
   {
     id: 'melipona-marginata',
     nomeCientifico: 'Melipona marginata',
-    nomesPopulares: ['Manduri', 'Manduri-carioca', 'Manduri-amarelo'],
+    nomesPopulares: ['Manduri', 'Manduri-carioca'],
+    nomesAlternativos: ['Manduri-amarelo'],
     familia: 'Apidae',
+    genero: 'Melipona',
     tamanho: 'média',
     producaoMel: 'média',
     distribuicao: ['Sudeste', 'Sul', 'São Paulo', 'Rio de Janeiro', 'Minas Gerais', 'Paraná', 'Santa Catarina'],
@@ -316,7 +346,9 @@ export const especies: Especie[] = [
     id: 'melipona-seminigra',
     nomeCientifico: 'Melipona seminigra',
     nomesPopulares: ['Uruçu-boca-de-renda', 'Uruçu-cinzenta'],
+    nomesAlternativos: [],
     familia: 'Apidae',
+    genero: 'Melipona',
     tamanho: 'grande',
     producaoMel: 'alta',
     distribuicao: ['Norte', 'Amazônia', 'Pará', 'Amazonas', 'Amapá', 'Roraima'],
@@ -350,8 +382,10 @@ export const especies: Especie[] = [
   {
     id: 'melipona-rufiventris',
     nomeCientifico: 'Melipona rufiventris',
-    nomesPopulares: ['Uruçu-amarela', 'Tujuba', 'Tuiuva', 'Tujuva'],
+    nomesPopulares: ['Uruçu-amarela', 'Tujuba'],
+    nomesAlternativos: ['Tuiuva', 'Tujuva'],
     familia: 'Apidae',
+    genero: 'Melipona',
     tamanho: 'grande',
     producaoMel: 'alta',
     distribuicao: ['Centro-Oeste', 'Sudeste', 'Mato Grosso', 'Mato Grosso do Sul', 'Goiás', 'Distrito Federal', 'Minas Gerais'],
@@ -386,7 +420,9 @@ export const especies: Especie[] = [
     id: 'melipona-fasciculata',
     nomeCientifico: 'Melipona fasciculata',
     nomesPopulares: ['Tiúba', 'Uruçu-cinzenta'],
+    nomesAlternativos: [],
     familia: 'Apidae',
+    genero: 'Melipona',
     tamanho: 'grande',
     producaoMel: 'muito alta',
     distribuicao: ['Norte', 'Nordeste', 'Maranhão', 'Piauí', 'Ceará', 'Pará', 'Tocantins'],
@@ -420,8 +456,10 @@ export const especies: Especie[] = [
   {
     id: 'frieseomelitta-varia',
     nomeCientifico: 'Frieseomelitta varia',
-    nomesPopulares: ['Marmelada', 'Marmelada-amarela', 'Moça-branca'],
+    nomesPopulares: ['Marmelada', 'Marmelada-amarela'],
+    nomesAlternativos: ['Moça-branca'],
     familia: 'Apidae',
+    genero: 'Frieseomelitta',
     tamanho: 'pequena',
     producaoMel: 'baixa',
     distribuicao: ['Nordeste', 'Sergipe', 'Bahia', 'Alagoas', 'Pernambuco'],
@@ -456,7 +494,9 @@ export const especies: Especie[] = [
     id: 'melipona-mondury',
     nomeCientifico: 'Melipona mondury',
     nomesPopulares: ['Bugia', 'Tujuba'],
+    nomesAlternativos: [],
     familia: 'Apidae',
+    genero: 'Melipona',
     tamanho: 'grande',
     producaoMel: 'média',
     distribuicao: ['Sul', 'Sudeste', 'Paraná', 'Santa Catarina', 'São Paulo', 'Rio de Janeiro'],
@@ -490,8 +530,10 @@ export const especies: Especie[] = [
   {
     id: 'scaptotrigona-depilis',
     nomeCientifico: 'Scaptotrigona depilis',
-    nomesPopulares: ['Tombuna', 'Canudo', 'Mandaguari', 'Tubiba'],
+    nomesPopulares: ['Tombuna', 'Canudo'],
+    nomesAlternativos: ['Mandaguari', 'Tubiba'],
     familia: 'Apidae',
+    genero: 'Scaptotrigona',
     tamanho: 'média',
     producaoMel: 'média',
     distribuicao: ['Centro-Oeste', 'Sudeste', 'Sul', 'Mato Grosso do Sul', 'São Paulo', 'Paraná', 'Santa Catarina'],
@@ -526,7 +568,9 @@ export const especies: Especie[] = [
     id: 'plebeia-remota',
     nomeCientifico: 'Plebeia remota',
     nomesPopulares: ['Mirim-guaçu', 'Mirim-guaçu-amarela'],
+    nomesAlternativos: [],
     familia: 'Apidae',
+    genero: 'Plebeia',
     tamanho: 'pequena',
     producaoMel: 'baixa',
     distribuicao: ['Sul', 'Sudeste', 'Paraná', 'Santa Catarina', 'Rio Grande do Sul', 'São Paulo'],
@@ -561,7 +605,9 @@ export const especies: Especie[] = [
     id: 'melipona-asilvai',
     nomeCientifico: 'Melipona asilvai',
     nomesPopulares: ['Rajada', 'Manduri'],
+    nomesAlternativos: [],
     familia: 'Apidae',
+    genero: 'Melipona',
     tamanho: 'média',
     producaoMel: 'média',
     distribuicao: ['Nordeste', 'Bahia', 'Sergipe', 'Alagoas', 'Pernambuco'],
@@ -595,8 +641,10 @@ export const especies: Especie[] = [
   {
     id: 'trigona-spinipes',
     nomeCientifico: 'Trigona spinipes',
-    nomesPopulares: ['Irapuá', 'Arapuá', 'Abelha-cachorro'],
+    nomesPopulares: ['Irapuá', 'Arapuá'],
+    nomesAlternativos: ['Abelha-cachorro'],
     familia: 'Apidae',
+    genero: 'Trigona',
     tamanho: 'média',
     producaoMel: 'média',
     distribuicao: ['Nacional'],
@@ -631,7 +679,9 @@ export const especies: Especie[] = [
     id: 'partamona-helleri',
     nomeCientifico: 'Partamona helleri',
     nomesPopulares: ['Boca-de-sapo', 'Cupira'],
+    nomesAlternativos: [],
     familia: 'Apidae',
+    genero: 'Partamona',
     tamanho: 'média',
     producaoMel: 'baixa',
     distribuicao: ['Sudeste', 'Sul', 'São Paulo', 'Rio de Janeiro', 'Paraná', 'Santa Catarina'],
@@ -666,7 +716,9 @@ export const especies: Especie[] = [
     id: 'nannotrigona-testaceicornis',
     nomeCientifico: 'Nannotrigona testaceicornis',
     nomesPopulares: ['Iraí', 'Irai'],
+    nomesAlternativos: [],
     familia: 'Apidae',
+    genero: 'Nannotrigona',
     tamanho: 'pequena',
     producaoMel: 'baixa',
     distribuicao: ['Sudeste', 'Sul', 'São Paulo', 'Rio de Janeiro', 'Paraná', 'Santa Catarina'],

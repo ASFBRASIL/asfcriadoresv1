@@ -371,12 +371,23 @@ export function EspecieDetalhe() {
               <h1 className="text-3xl lg:text-5xl font-poppins font-bold text-white mb-2 drop-shadow-lg">
                 {especie.nomesPopulares[0]}
               </h1>
-              <p className="text-lg lg:text-xl italic text-white/80 mb-3">
+              <p className="text-lg lg:text-xl italic text-white/80 mb-1">
                 {especie.nomeCientifico}
               </p>
+              {especie.genero && (
+                <p className="text-sm text-white/60 mb-2">
+                  Gênero: <span className="italic">{especie.genero}</span>
+                  {especie.subgenero && <> &middot; Subgênero: <span className="italic">{especie.subgenero}</span></>}
+                </p>
+              )}
               {especie.nomesPopulares.length > 1 && (
-                <p className="text-sm text-white/70 mb-6">
+                <p className="text-sm text-white/70 mb-2">
                   Também conhecida como: {especie.nomesPopulares.slice(1).join(', ')}
+                </p>
+              )}
+              {especie.nomesAlternativos && especie.nomesAlternativos.length > 0 && (
+                <p className="text-sm text-white/60 mb-4">
+                  Nomes regionais: {especie.nomesAlternativos.join(', ')}
                 </p>
               )}
 
@@ -490,11 +501,23 @@ export function EspecieDetalhe() {
               <p className="text-[var(--asf-gray-medium)] dark:text-gray-300 mb-3">
                 {especie.mel.descricao}
               </p>
-              {especie.mel.sabor && (
-                <p className="text-sm dark:text-gray-300">
-                  <strong className="dark:text-gray-200">Sabor:</strong> {especie.mel.sabor}
-                </p>
-              )}
+              <div className="grid sm:grid-cols-2 gap-3 mb-3">
+                {especie.mel.sabor && (
+                  <div className="text-sm dark:text-gray-300">
+                    <strong className="dark:text-gray-200">Sabor:</strong> {especie.mel.sabor}
+                  </div>
+                )}
+                {especie.mel.cor && (
+                  <div className="text-sm dark:text-gray-300">
+                    <strong className="dark:text-gray-200">Cor:</strong> {especie.mel.cor}
+                  </div>
+                )}
+                {especie.mel.producaoAnual && (
+                  <div className="text-sm dark:text-gray-300">
+                    <strong className="dark:text-gray-200">Produção anual:</strong> {especie.mel.producaoAnual}
+                  </div>
+                )}
+              </div>
               {especie.mel.propriedades.length > 0 && (
                 <div className="mt-3">
                   <p className="text-sm font-medium mb-2 dark:text-gray-200">Propriedades:</p>
@@ -608,6 +631,18 @@ export function EspecieDetalhe() {
                   <span className="text-[var(--asf-gray-medium)] dark:text-gray-400">Família</span>
                   <span className="font-medium dark:text-gray-200">{especie.familia}</span>
                 </div>
+                {especie.genero && (
+                  <div className="flex justify-between py-1.5">
+                    <span className="text-[var(--asf-gray-medium)] dark:text-gray-400">Gênero</span>
+                    <span className="font-medium italic dark:text-gray-200">{especie.genero}</span>
+                  </div>
+                )}
+                {especie.subgenero && (
+                  <div className="flex justify-between py-1.5">
+                    <span className="text-[var(--asf-gray-medium)] dark:text-gray-400">Subgênero</span>
+                    <span className="font-medium italic dark:text-gray-200">{especie.subgenero}</span>
+                  </div>
+                )}
                 <div className="flex justify-between py-1.5">
                   <span className="text-[var(--asf-gray-medium)] dark:text-gray-400">Tamanho</span>
                   <span className="font-medium dark:text-gray-200">{especie.tamanho}</span>
@@ -634,6 +669,16 @@ export function EspecieDetalhe() {
                     {especie.conservacao.status}
                   </span>
                 </div>
+                {especie.statusPesquisa && (
+                  <div className="flex justify-between py-1.5">
+                    <span className="text-[var(--asf-gray-medium)] dark:text-gray-400">
+                      Status pesquisa
+                    </span>
+                    <span className="font-medium dark:text-gray-200">
+                      {especie.statusPesquisa}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
