@@ -28,7 +28,7 @@ export function Notificacoes() {
       const { data } = await supabase
         .from('notificacoes')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('usuario_id', user.id)
         .order('created_at', { ascending: false });
 
       if (data) setNotificacoes(data);
@@ -46,7 +46,7 @@ export function Notificacoes() {
 
   const marcarTodasLidas = async () => {
     if (!user || !isSupabaseConfigured()) return;
-    await supabase.from('notificacoes').update({ lida: true }).eq('user_id', user.id).eq('lida', false);
+    await supabase.from('notificacoes').update({ lida: true }).eq('usuario_id', user.id).eq('lida', false);
     setNotificacoes(prev => prev.map(n => ({ ...n, lida: true })));
   };
 

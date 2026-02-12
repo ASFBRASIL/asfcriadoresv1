@@ -75,7 +75,7 @@ export function Header() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
-  const goSearch = (path: string) => { navigate(path); setSearchOpen(false); setSearchQuery(''); };
+  const goSearch = (path: string) => { setSearchOpen(false); setSearchQuery(''); setIsMobileMenuOpen(false); navigate(path); };
 
   // Atalho global Ctrl+K / Cmd+K para abrir busca
   useEffect(() => {
@@ -208,7 +208,7 @@ export function Header() {
               <button onClick={() => setSearchOpen(true)}
                 className="flex items-center gap-2 px-3 py-2 rounded-xl text-[var(--asf-gray-medium)] hover:text-[var(--asf-green)] hover:bg-[var(--asf-green)]/10 transition-all border border-gray-200" title="Buscar (Ctrl+K)">
                 <Search className="w-4 h-4" />
-                <span className="text-xs text-gray-400">Ctrl+K</span>
+                <span className="text-xs text-gray-400">Buscar</span>
               </button>
             )}
           </div>
@@ -223,7 +223,7 @@ export function Header() {
                 <div className="relative">
                   <Link to="/notificacoes" className="p-2 rounded-xl text-[var(--asf-gray-medium)] hover:text-[var(--asf-green)] hover:bg-[var(--asf-green)]/10 transition-all" title="Notificações">
                     <Bell className="w-4.5 h-4.5" />
-                    {naoLidas > 0 && <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1">{naoLidas > 9 ? '9+' : naoLidas}</span>}
+                    {naoLidas > 0 && <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1">{naoLidas > 9 ? '9+' : naoLidas}</span>}
                   </Link>
                 </div>
                 <Link

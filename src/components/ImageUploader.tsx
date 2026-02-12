@@ -335,26 +335,41 @@ export function ImageUploader({
               {!isUploading && !disabled && (
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center">
                   <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setShowFullPreview(true);
-                      }}
-                      className="w-9 h-9 rounded-full bg-white/90 flex items-center justify-center hover:bg-white transition-colors"
-                      title="Ver em tamanho real"
-                    >
-                      <ZoomIn className="w-4 h-4 text-gray-700" />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRemove();
-                      }}
-                      className="w-9 h-9 rounded-full bg-white/90 flex items-center justify-center hover:bg-red-50 transition-colors"
-                      title="Remover"
-                    >
-                      <X className="w-4 h-4 text-red-500" />
-                    </button>
+                    {isAvatar ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          fileInputRef.current?.click();
+                        }}
+                        className="w-9 h-9 rounded-full bg-white/90 flex items-center justify-center hover:bg-white transition-colors"
+                        title="Alterar foto"
+                      >
+                        <Upload className="w-4 h-4 text-gray-700" />
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowFullPreview(true);
+                          }}
+                          className="w-9 h-9 rounded-full bg-white/90 flex items-center justify-center hover:bg-white transition-colors"
+                          title="Ver em tamanho real"
+                        >
+                          <ZoomIn className="w-4 h-4 text-gray-700" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemove();
+                          }}
+                          className="w-9 h-9 rounded-full bg-white/90 flex items-center justify-center hover:bg-red-50 transition-colors"
+                          title="Remover"
+                        >
+                          <X className="w-4 h-4 text-red-500" />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               )}
@@ -418,8 +433,8 @@ export function ImageUploader({
         />
       </div>
 
-      {/* Info de compressão */}
-      {compressionInfo && (
+      {/* Info de compressão - ocultar no modo avatar */}
+      {compressionInfo && !isAvatar && (
         <p className="mt-2 text-xs text-[var(--asf-green)] flex items-center gap-1">
           <Check className="w-3.5 h-3.5" />
           Comprimido: {compressionInfo}

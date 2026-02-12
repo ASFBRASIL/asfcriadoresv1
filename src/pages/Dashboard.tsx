@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   Users, Leaf, Star, MessageSquare,
   Search, Check, Trash2, Edit2, Plus, X, Save,
@@ -599,7 +599,7 @@ function TabAvaliacoes({ showToast }: { showToast: (m: string, t?: 'success' | '
 
   return (
     <div className="space-y-4">
-      {delId && <Confirm title="Excluir Avaliação" message="A avaliação será removida permanentemente." onConfirm={async () => { await excluir(delId); showToast('Excluída.'); setDelId(null); }} onCancel={() => setDelId(null)} />}
+      {delId && <Confirm title="Excluir Avaliação" message="A avaliação será removida permanentemente." onConfirm={async () => { const result = await excluir(delId); result.success ? showToast('Excluída.') : showToast(result.error || 'Erro ao excluir. Verifique as permissões no Supabase (RLS).', 'error'); setDelId(null); }} onCancel={() => setDelId(null)} />}
       <div className="flex flex-wrap items-center gap-3">
         <select value={filtro} onChange={e => setFiltro(e.target.value)} className="px-3 py-2.5 rounded-xl border border-gray-200 outline-none text-sm"><option value="todas">Todas as notas</option><option value="baixas">Notas 1-2</option><option value="altas">Notas 4-5</option></select>
         <button onClick={doFilter} className="px-4 py-2.5 rounded-xl bg-[var(--asf-green)] text-white text-sm font-medium hover:bg-[var(--asf-green-dark)] flex items-center gap-2"><Filter className="w-4 h-4" /> Filtrar</button>
@@ -772,9 +772,18 @@ type TabId = 'overview' | 'criadores' | 'especies' | 'conteudo' | 'avaliacoes' |
 export function Dashboard() {
   const { stats } = useDashboardStats();
   const { user, criador } = useAuth();
-  const [tab, setTab] = useState<TabId>('overview');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = (searchParams.get('tab') as TabId) || 'overview';
+  const [tab, setTab] = useState<TabId>(
+    ['overview','criadores','especies','conteudo','avaliacoes','notificacoes','config'].includes(initialTab) ? initialTab : 'overview'
+  );
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const show = (message: string, type: 'success' | 'error' = 'success') => setToast({ message, type });
+
+  const handleTabChange = (newTab: TabId) => {
+    setTab(newTab);
+    setSearchParams({ tab: newTab }, { replace: true });
+  };
 
   const tabs: { id: TabId; label: string; icon: LucideIcon }[] = [
     { id: 'overview', label: 'Visão Geral', icon: BarChart3 },
@@ -815,7 +824,7 @@ export function Dashboard() {
       <div className="bg-white border-b border-gray-100 sticky top-16 lg:top-20 z-30">
         <div className="container-asf section-padding">
           <div className="flex gap-1 overflow-x-auto -mb-px scrollbar-hide">{tabs.map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)} className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-all min-h-[44px] ${tab === t.id ? 'border-[var(--asf-green)] text-[var(--asf-green)]' : 'border-transparent text-[var(--asf-gray-medium)] hover:text-[var(--asf-gray-dark)]'}`}>
+            <button key={t.id} onClick={() => handleTabChange(t.id)} className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-all min-h-[44px] ${tab === t.id ? 'border-[var(--asf-green)] text-[var(--asf-green)]' : 'border-transparent text-[var(--asf-gray-medium)] hover:text-[var(--asf-gray-dark)]'}`}>
               <t.icon className="w-4 h-4" /><span className="hidden sm:inline">{t.label}</span><span className="sm:hidden">{t.label.slice(0, 6)}</span>
             </button>
           ))}</div>

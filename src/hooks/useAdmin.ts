@@ -225,9 +225,30 @@ export function useAdminCriadores() {
       return { success: true };
     }
     try {
+      // Re-geocodificar se endereço mudou
+      const locationChanged = updates.cidade || updates.estado || updates.cep || updates.endereco;
+      if (locationChanged) {
+        const { geocodeEndereco, getEstadoCoordenadas } = await import('../lib/geocoding');
+        const geoResult = await geocodeEndereco({
+          cidade: updates.cidade as string,
+          estado: updates.estado as string,
+          cep: updates.cep as string,
+          endereco: updates.endereco as string,
+        });
+        if (geoResult) {
+          updates.latitude = geoResult.latitude;
+          updates.longitude = geoResult.longitude;
+        } else if (updates.estado) {
+          const estadoCoords = getEstadoCoordenadas(updates.estado as string);
+          updates.latitude = estadoCoords.latitude;
+          updates.longitude = estadoCoords.longitude;
+        }
+      }
+
       const { error: e } = await supabase.from('criadores').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', id);
       if (e) throw e;
-      setCriadores(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
+      // Re-buscar para ter dados atualizados do banco
+      await buscar();
       return { success: true };
     } catch (err) {
       return { success: false, error: (err as Error).message };
@@ -344,7 +365,8 @@ export function useAdminEspecies() {
       const { data, error: e } = await supabase.from('especies').insert(dbData).select().single();
       if (e) throw e;
       const converted = dbEspecieToApp(data) as AdminEspecie;
-      setEspecies(prev => [converted, ...prev]);
+      // Re-buscar para manter consistência
+      await buscar();
       return { success: true, data: converted };
     } catch (err) {
       return { success: false, error: (err as Error).message };
@@ -444,7 +466,11 @@ export function useAdminAvaliacoes() {
 
       const { data, error: e } = await query;
       if (e) throw e;
-      setAvaliacoes((data || []) as AdminAvaliacao[]);
+      setAvaliacoes((data || []).map((a: any) => ({
+        ...a,
+        autor_nome: a.autor_nome || 'Anônimo',
+        criador_nome: a.criador_nome || '',
+      })) as AdminAvaliacao[]);
     } catch (err) {
       setError((err as Error).message);
       setAvaliacoes(mockAvaliacoes);
@@ -459,11 +485,13 @@ export function useAdminAvaliacoes() {
       return { success: true };
     }
     try {
+      // Tentar deletar pelo id (pode ser uuid ou string)
       const { error: e } = await supabase.from('avaliacoes').delete().eq('id', id);
       if (e) throw e;
       setAvaliacoes(prev => prev.filter(a => a.id !== id));
       return { success: true };
     } catch (err) {
+      console.error('Erro ao excluir avaliação:', err);
       return { success: false, error: (err as Error).message };
     }
   };

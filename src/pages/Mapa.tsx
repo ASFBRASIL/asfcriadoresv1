@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import { Icon, LatLngBounds } from 'leaflet';
 import { Search, Filter, X, MapPin, Phone, Star, ChevronDown, Check, Heart, User } from 'lucide-react';
@@ -45,7 +45,8 @@ function MapBounds() {
 
 export function Mapa() {
   useSEO({ title: 'Mapa de Criadores', description: 'Encontre criadores de abelhas sem ferrão perto de você com nosso mapa interativo. Filtre por espécie e região.' });
-  const [searchTerm, setSearchTerm] = useState('');
+  const [urlSearchParams] = useSearchParams();
+  const [searchTerm, setSearchTerm] = useState(urlSearchParams.get('q') || '');
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [selectedEspecies, setSelectedEspecies] = useState<string[]>([]);
   const [selectedStatus, setSelectedStatus] = useState<('venda' | 'troca' | 'informacao')[]>([]);
