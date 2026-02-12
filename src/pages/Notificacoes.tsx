@@ -10,7 +10,9 @@ interface Notificacao {
   titulo: string;
   mensagem: string;
   lida: boolean;
-  created_at: string;
+  created_at: string | null;
+  link?: string | null;
+  usuario_id?: string;
 }
 
 export function Notificacoes() {
@@ -110,7 +112,7 @@ export function Notificacoes() {
                       </p>
                       <p className="text-xs text-[var(--asf-gray-medium)] mt-1">{notif.mensagem}</p>
                       <p className="text-xs text-gray-400 mt-2">
-                        {new Date(notif.created_at).toLocaleDateString('pt-BR', {
+                        {new Date(notif.created_at || '').toLocaleDateString('pt-BR', {
                           day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
                         })}
                       </p>

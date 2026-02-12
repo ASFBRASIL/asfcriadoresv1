@@ -107,7 +107,8 @@ export function useDashboardStats() {
           .select('estado');
 
         const porEstado = (criadoresData || []).reduce((acc, curr) => {
-          acc[curr.estado] = (acc[curr.estado] || 0) + 1;
+          const estado = curr.estado ?? 'Desconhecido';
+          acc[estado] = (acc[estado] || 0) + 1;
           return acc;
         }, {} as Record<string, number>);
 

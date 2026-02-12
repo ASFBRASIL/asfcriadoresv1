@@ -82,7 +82,7 @@ export function useCriadores(options: UseCriadoresOptions = {}) {
       const { data, error: queryError } = await query.order('avaliacao_media', { ascending: false });
 
       if (queryError) throw queryError;
-      setCriadores((data || []) as CriadorData[]);
+      setCriadores((data || []) as unknown as CriadorData[]);
     } catch (err) {
       setError(err as Error);
       console.error('Erro ao buscar criadores:', err);
@@ -147,7 +147,7 @@ export function useCriador(criadorId: string | null) {
           .single();
 
         if (criadorError) throw criadorError;
-        setCriador(criadorData as CriadorData);
+        setCriador(criadorData as unknown as CriadorData);
 
         // Buscar espécies do criador
         const { data: especiesData } = await supabase
@@ -221,7 +221,7 @@ export function useUpdateCriador() {
         .single();
 
       if (updateError) throw updateError;
-      return { data: data as CriadorData, error: null };
+      return { data: data as unknown as CriadorData, error: null };
     } catch (err) {
       setError(err as Error);
       return { data: null, error: err as Error };

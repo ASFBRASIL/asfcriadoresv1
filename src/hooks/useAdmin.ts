@@ -132,7 +132,8 @@ export function useDashboardStats() {
 
       const { data: criadoresData } = await supabase.from('criadores').select('estado');
       const porEstado = (criadoresData || []).reduce((acc, curr) => {
-        acc[curr.estado] = (acc[curr.estado] || 0) + 1;
+        const estado = curr.estado ?? 'Desconhecido';
+        acc[estado] = (acc[estado] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
 
@@ -362,7 +363,7 @@ export function useAdminEspecies() {
     }
     try {
       const dbData = especieToDb(especie);
-      const { data, error: e } = await supabase.from('especies').insert(dbData).select().single();
+      const { data, error: e } = await supabase.from('especies').insert(dbData as any).select().single();
       if (e) throw e;
       const converted = dbEspecieToApp(data) as AdminEspecie;
       // Re-buscar para manter consistência

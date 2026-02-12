@@ -26,8 +26,8 @@ export function AuthCallback() {
         // Se não tem coordenadas, tentar geocodificar com base na cidade/estado
         if ((!criador.latitude || criador.latitude === 0) && (criador.cidade || criador.estado)) {
           const geoResult = await geocodeEndereco({
-            cidade: criador.cidade,
-            estado: criador.estado,
+            cidade: criador.cidade ?? undefined,
+            estado: criador.estado ?? undefined,
           });
           if (geoResult) {
             await supabase.from('criadores')

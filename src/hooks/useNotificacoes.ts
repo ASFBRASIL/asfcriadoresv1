@@ -58,7 +58,7 @@ export function useContatos() {
         .order('created_at', { ascending: false })
         .limit(50);
       if (error) throw error;
-      return (data || []) as ContatoRecord[];
+      return (data || []) as unknown as ContatoRecord[];
     } catch {
       return [];
     }
