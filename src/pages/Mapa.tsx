@@ -4,7 +4,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import { Icon, LatLngBounds } from 'leaflet';
 import { Search, Filter, X, MapPin, Phone, Star, ChevronDown, Check, Heart, User } from 'lucide-react';
 import { criadores as mockCriadores } from '../data/criadores';
-import { isSupabaseConfigured } from '../lib/supabase';
+// supabase import removido - filtros agora são sempre client-side
 import { useCriadores } from '../hooks/useCriadores';
 import { useAuth } from '../contexts/AuthContext';
 import { useFavoritos } from '../hooks/useWhatsApp';
@@ -94,18 +94,13 @@ export function Mapa() {
   // All species for filter
   const todasEspecies = useMemo(() => getTodasEspeciesParaFiltro(), []);
 
-  // Filtered creators - para dados mock, aplicar filtro local; para Supabase, o hook já filtra
+  // Filtered creators - sempre aplicar filtros localmente
   const filteredCriadores = useMemo(() => {
-    if (isSupabaseConfigured()) {
-      // Hook já filtra, usar direto
-      return criadores;
-    }
-    // Filtro local para dados mockados
     return criadores.filter(criador => {
       // Filter by species
       if (selectedEspecies.length > 0) {
         const especiesList = getEspeciesList(criador);
-        const hasMatchingSpecies = especiesList.some((espId: string) => 
+        const hasMatchingSpecies = especiesList.some((espId: string) =>
           selectedEspecies.includes(espId)
         );
         if (!hasMatchingSpecies) return false;
@@ -113,7 +108,7 @@ export function Mapa() {
 
       // Filter by status
       if (selectedStatus.length > 0) {
-        const hasMatchingStatus = criador.status.some((st: string) => 
+        const hasMatchingStatus = criador.status.some((st: string) =>
           selectedStatus.includes(st as any)
         );
         if (!hasMatchingStatus) return false;

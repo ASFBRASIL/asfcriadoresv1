@@ -76,23 +76,42 @@ export function useCriadores(options: UseCriadoresOptions = {}) {
         query = query.or(`nome.ilike.%${options.query}%,cidade.ilike.%${options.query}%`);
       }
 
-      // Filtro por espécies (requer join)
-      if (options.especies?.length) {
-        const { data: criadorEspecies } = await supabase
-          .from('criador_especies')
-          .select('criador_id')
-          .in('especie_id', options.especies);
-
-        if (criadorEspecies) {
-          const criadorIds = [...new Set(criadorEspecies.map(ce => ce.criador_id))];
-          query = query.in('id', criadorIds);
-        }
-      }
-
       const { data, error: queryError } = await query.order('avaliacao_media', { ascending: false });
 
       if (queryError) throw queryError;
-      setCriadores((data || []) as unknown as CriadorData[]);
+
+      // Buscar espécies vinculadas a cada criador (tabela de junção)
+      let criadoresComEspecies = (data || []) as unknown as CriadorData[];
+      if (criadoresComEspecies.length > 0) {
+        const criadorIds = criadoresComEspecies.map(c => c.id);
+        const { data: ceData } = await supabase
+          .from('criador_especies')
+          .select('criador_id, especie_id')
+          .in('criador_id', criadorIds);
+
+        if (ceData && ceData.length > 0) {
+          // Agrupar espécies por criador
+          const especiesPorCriador: Record<string, string[]> = {};
+          ceData.forEach(ce => {
+            if (!especiesPorCriador[ce.criador_id]) especiesPorCriador[ce.criador_id] = [];
+            especiesPorCriador[ce.criador_id].push(ce.especie_id);
+          });
+          // Adicionar campo especies em cada criador
+          criadoresComEspecies = criadoresComEspecies.map(c => ({
+            ...c,
+            especies: especiesPorCriador[c.id] || [],
+          }));
+        }
+      }
+
+      // Filtro por espécies client-side (pois criador_especies pode estar vazia)
+      if (options.especies?.length) {
+        criadoresComEspecies = criadoresComEspecies.filter(c =>
+          (c.especies || []).some((espId: string) => options.especies?.includes(espId))
+        );
+      }
+
+      setCriadores(criadoresComEspecies);
     } catch (err) {
       console.error('Erro ao buscar criadores, usando dados locais:', err);
       // Fallback para dados mockados COM filtros aplicados
