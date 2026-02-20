@@ -1,6 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase, isSupabaseConfigured, dbEspecieToApp } from '../lib/supabase';
 import { especies as mockEspecies } from '../data/especies';
+
+// Remove acentos para busca tolerante
+function normalize(str: string): string {
+  return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
+// Verifica se um texto normalizado contém o termo normalizado
+function matchesSearch(text: string, term: string): boolean {
+  return normalize(text).includes(term);
+}
 
 interface UseEspeciesOptions {
   biomas?: string[];
@@ -20,6 +30,26 @@ export function useEspecies(options: UseEspeciesOptions = {}) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
+  // Debounce para a query de busca
+  const [debouncedQuery, setDebouncedQuery] = useState(options.query || '');
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const newQuery = options.query || '';
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    // Se limpou a busca, aplicar imediatamente
+    if (!newQuery.trim()) {
+      setDebouncedQuery('');
+      return;
+    }
+    debounceTimer.current = setTimeout(() => {
+      setDebouncedQuery(newQuery);
+    }, 300);
+    return () => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    };
+  }, [options.query]);
+
   // Serializar opções para evitar re-renders desnecessários
   const biomasKey = JSON.stringify(options.biomas || []);
   const tamanhosKey = JSON.stringify(options.tamanhos || []);
@@ -27,7 +57,7 @@ export function useEspecies(options: UseEspeciesOptions = {}) {
   const conservacaoKey = JSON.stringify(options.conservacao || []);
   const producaoKey = JSON.stringify(options.producao || []);
   const generosKey = JSON.stringify(options.generos || []);
-  const queryKey = options.query || '';
+  const queryKey = debouncedQuery;
   const limitKey = options.limit || 0;
   const offsetKey = options.offset || 0;
 
@@ -44,7 +74,7 @@ export function useEspecies(options: UseEspeciesOptions = {}) {
       const conservacao = options.conservacao;
       const producao = options.producao;
       const generos = options.generos;
-      const query = options.query;
+      const query = debouncedQuery;
 
       // Modo offline - usar dados mockados
       if (!isSupabaseConfigured()) {
@@ -67,16 +97,16 @@ export function useEspecies(options: UseEspeciesOptions = {}) {
         }
         if (generos?.length) {
           filtered = filtered.filter(e => {
-            const genero = e.nomeCientifico.split(' ')[0];
+            const genero = e.genero || e.nomeCientifico.split(' ')[0];
             return generos.includes(genero);
           });
         }
-        if (query) {
-          const q = query.toLowerCase();
+        if (query && query.trim()) {
+          const q = normalize(query);
           filtered = filtered.filter(e =>
-            e.nomeCientifico.toLowerCase().includes(q) ||
-            e.nomesPopulares.some(n => n.toLowerCase().includes(q)) ||
-            (e.nomesAlternativos || []).some((n: string) => n.toLowerCase().includes(q))
+            matchesSearch(e.nomeCientifico, q) ||
+            e.nomesPopulares.some(n => matchesSearch(n, q)) ||
+            (e.nomesAlternativos || []).some((n: string) => matchesSearch(n, q))
           );
         }
 
@@ -98,6 +128,7 @@ export function useEspecies(options: UseEspeciesOptions = {}) {
           if (!cancelled) {
             const mapped = (data || []).map(dbEspecieToApp);
             setEspecies(mapped);
+            setTotalCatalogadas(mapped.length);
           }
         } else {
           // Usar RPC filtrar_especies para filtragem avançada
@@ -136,6 +167,9 @@ export function useEspecies(options: UseEspeciesOptions = {}) {
           // Fallback para query direta do Supabase
           try {
             let q = supabase.from('especies').select('*');
+            if (query && query.trim()) {
+              q = q.or(`nome_cientifico.ilike.%${query.trim()}%,nomes_populares.cs.{"${query.trim()}"}`);
+            }
             if (biomas?.length) q = q.overlaps('biomas', biomas);
             if (tamanhos?.length) q = q.in('tamanho', tamanhos);
             if (dificuldades?.length) q = q.in('manejo_dificuldade', dificuldades);
@@ -146,9 +180,18 @@ export function useEspecies(options: UseEspeciesOptions = {}) {
               setTotalCatalogadas(data.length);
             }
           } catch {
-            // Último fallback: dados mockados
-            setEspecies(mockEspecies);
-            setTotalCatalogadas(mockEspecies.length);
+            // Último fallback: dados mockados com busca local
+            const normalizedQuery = query ? normalize(query) : '';
+            let fallback = [...mockEspecies];
+            if (normalizedQuery) {
+              fallback = fallback.filter(e =>
+                matchesSearch(e.nomeCientifico, normalizedQuery) ||
+                e.nomesPopulares.some(n => matchesSearch(n, normalizedQuery)) ||
+                (e.nomesAlternativos || []).some((n: string) => matchesSearch(n, normalizedQuery))
+              );
+            }
+            setEspecies(fallback);
+            setTotalCatalogadas(fallback.length);
           }
         }
       } finally {
@@ -230,13 +273,13 @@ export function useBuscarEspecies() {
 
     setIsLoading(true);
 
-    // Modo offline - buscar nos dados mockados
+    // Modo offline - buscar nos dados mockados (com normalização de acentos)
     if (!isSupabaseConfigured()) {
-      const q = termo.toLowerCase();
+      const q = normalize(termo);
       const filtered = mockEspecies.filter(e =>
-        e.nomeCientifico.toLowerCase().includes(q) ||
-        e.nomesPopulares.some(n => n.toLowerCase().includes(q)) ||
-        (e.nomesAlternativos || []).some((n: string) => n.toLowerCase().includes(q))
+        matchesSearch(e.nomeCientifico, q) ||
+        e.nomesPopulares.some(n => matchesSearch(n, q)) ||
+        (e.nomesAlternativos || []).some((n: string) => matchesSearch(n, q))
       );
       setResultados(filtered.slice(0, 10));
       setIsLoading(false);
@@ -251,11 +294,12 @@ export function useBuscarEspecies() {
       setResultados((data || []).map(dbEspecieToApp).slice(0, 10));
     } catch (err) {
       console.error('Erro na busca:', err);
-      // Fallback para dados mockados
-      const q = termo.toLowerCase();
+      // Fallback para dados mockados com normalização
+      const q = normalize(termo);
       const filtered = mockEspecies.filter(e =>
-        e.nomeCientifico.toLowerCase().includes(q) ||
-        e.nomesPopulares.some(n => n.toLowerCase().includes(q))
+        matchesSearch(e.nomeCientifico, q) ||
+        e.nomesPopulares.some(n => matchesSearch(n, q)) ||
+        (e.nomesAlternativos || []).some((n: string) => matchesSearch(n, q))
       );
       setResultados(filtered.slice(0, 10));
     } finally {
