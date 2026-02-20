@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase, isSupabaseConfigured, dbEspecieToApp } from '../lib/supabase';
-import { especies as mockEspecies } from '../data/especies';
+import { especies as mockEspecies, type Especie } from '../data/especies';
 
 // Remove acentos para busca tolerante
 function normalize(str: string): string {
@@ -22,6 +22,54 @@ interface UseEspeciesOptions {
   query?: string;
   limit?: number;
   offset?: number;
+}
+
+// Filtra dados mockados localmente com todos os filtros e busca
+function filterMockEspecies(
+  source: Especie[],
+  opts: {
+    biomas?: string[];
+    tamanhos?: string[];
+    dificuldades?: string[];
+    conservacao?: string[];
+    producao?: string[];
+    generos?: string[];
+    query?: string;
+  }
+): Especie[] {
+  let filtered = [...source];
+
+  if (opts.biomas?.length) {
+    filtered = filtered.filter(e => e.biomas.some(b => opts.biomas!.includes(b)));
+  }
+  if (opts.tamanhos?.length) {
+    filtered = filtered.filter(e => opts.tamanhos!.includes(e.tamanho));
+  }
+  if (opts.dificuldades?.length) {
+    filtered = filtered.filter(e => opts.dificuldades!.includes(e.manejo.dificuldade));
+  }
+  if (opts.conservacao?.length) {
+    filtered = filtered.filter(e => opts.conservacao!.includes(e.conservacao.status));
+  }
+  if (opts.producao?.length) {
+    filtered = filtered.filter(e => opts.producao!.includes(e.producaoMel));
+  }
+  if (opts.generos?.length) {
+    filtered = filtered.filter(e => {
+      const genero = e.genero || e.nomeCientifico.split(' ')[0];
+      return opts.generos!.includes(genero);
+    });
+  }
+  if (opts.query && opts.query.trim()) {
+    const q = normalize(opts.query);
+    filtered = filtered.filter(e =>
+      matchesSearch(e.nomeCientifico, q) ||
+      e.nomesPopulares.some(n => matchesSearch(n, q)) ||
+      (e.nomesAlternativos || []).some((n: string) => matchesSearch(n, q))
+    );
+  }
+
+  return filtered;
 }
 
 export function useEspecies(options: UseEspeciesOptions = {}) {
@@ -68,48 +116,19 @@ export function useEspecies(options: UseEspeciesOptions = {}) {
       setIsLoading(true);
       setError(null);
 
-      const biomas = options.biomas;
-      const tamanhos = options.tamanhos;
-      const dificuldades = options.dificuldades;
-      const conservacao = options.conservacao;
-      const producao = options.producao;
-      const generos = options.generos;
-      const query = debouncedQuery;
+      const filterOpts = {
+        biomas: options.biomas,
+        tamanhos: options.tamanhos,
+        dificuldades: options.dificuldades,
+        conservacao: options.conservacao,
+        producao: options.producao,
+        generos: options.generos,
+        query: debouncedQuery,
+      };
 
       // Modo offline - usar dados mockados
       if (!isSupabaseConfigured()) {
-        let filtered = [...mockEspecies];
-
-        if (biomas?.length) {
-          filtered = filtered.filter(e => e.biomas.some(b => biomas.includes(b)));
-        }
-        if (tamanhos?.length) {
-          filtered = filtered.filter(e => tamanhos.includes(e.tamanho));
-        }
-        if (dificuldades?.length) {
-          filtered = filtered.filter(e => dificuldades.includes(e.manejo.dificuldade));
-        }
-        if (conservacao?.length) {
-          filtered = filtered.filter(e => conservacao.includes(e.conservacao.status));
-        }
-        if (producao?.length) {
-          filtered = filtered.filter(e => producao.includes(e.producaoMel));
-        }
-        if (generos?.length) {
-          filtered = filtered.filter(e => {
-            const genero = e.genero || e.nomeCientifico.split(' ')[0];
-            return generos.includes(genero);
-          });
-        }
-        if (query && query.trim()) {
-          const q = normalize(query);
-          filtered = filtered.filter(e =>
-            matchesSearch(e.nomeCientifico, q) ||
-            e.nomesPopulares.some(n => matchesSearch(n, q)) ||
-            (e.nomesAlternativos || []).some((n: string) => matchesSearch(n, q))
-          );
-        }
-
+        const filtered = filterMockEspecies(mockEspecies, filterOpts);
         if (!cancelled) {
           setEspecies(filtered);
           setTotalCatalogadas(mockEspecies.length);
@@ -119,6 +138,7 @@ export function useEspecies(options: UseEspeciesOptions = {}) {
       }
 
       try {
+        const query = debouncedQuery;
         // Se tem termo de busca, usar RPC buscar_especies
         if (query && query.trim()) {
           const { data, error: rpcError } = await supabase
@@ -132,6 +152,12 @@ export function useEspecies(options: UseEspeciesOptions = {}) {
           }
         } else {
           // Usar RPC filtrar_especies para filtragem avançada
+          const biomas = options.biomas;
+          const tamanhos = options.tamanhos;
+          const dificuldades = options.dificuldades;
+          const conservacao = options.conservacao;
+          const producao = options.producao;
+          const generos = options.generos;
           const hasFilters = biomas?.length || tamanhos?.length || dificuldades?.length ||
                            conservacao?.length || producao?.length || generos?.length;
 
@@ -161,38 +187,13 @@ export function useEspecies(options: UseEspeciesOptions = {}) {
           }
         }
       } catch (err) {
+        console.error('Erro ao buscar espécies via Supabase, usando dados locais:', err);
+        // Fallback completo para dados mockados com TODOS os filtros
         if (!cancelled) {
-          setError(err as Error);
-          console.error('Erro ao buscar espécies:', err);
-          // Fallback para query direta do Supabase
-          try {
-            let q = supabase.from('especies').select('*');
-            if (query && query.trim()) {
-              q = q.or(`nome_cientifico.ilike.%${query.trim()}%,nomes_populares.cs.{"${query.trim()}"}`);
-            }
-            if (biomas?.length) q = q.overlaps('biomas', biomas);
-            if (tamanhos?.length) q = q.in('tamanho', tamanhos);
-            if (dificuldades?.length) q = q.in('manejo_dificuldade', dificuldades);
-            if (conservacao?.length) q = q.in('conservacao_status', conservacao);
-            const { data } = await q.order('nome_cientifico');
-            if (!cancelled && data) {
-              setEspecies(data.map(dbEspecieToApp));
-              setTotalCatalogadas(data.length);
-            }
-          } catch {
-            // Último fallback: dados mockados com busca local
-            const normalizedQuery = query ? normalize(query) : '';
-            let fallback = [...mockEspecies];
-            if (normalizedQuery) {
-              fallback = fallback.filter(e =>
-                matchesSearch(e.nomeCientifico, normalizedQuery) ||
-                e.nomesPopulares.some(n => matchesSearch(n, normalizedQuery)) ||
-                (e.nomesAlternativos || []).some((n: string) => matchesSearch(n, normalizedQuery))
-              );
-            }
-            setEspecies(fallback);
-            setTotalCatalogadas(fallback.length);
-          }
+          const filtered = filterMockEspecies(mockEspecies, filterOpts);
+          setEspecies(filtered);
+          setTotalCatalogadas(mockEspecies.length);
+          setError(null); // Limpar erro pois fallback funcionou
         }
       } finally {
         if (!cancelled) {
@@ -273,15 +274,19 @@ export function useBuscarEspecies() {
 
     setIsLoading(true);
 
-    // Modo offline - buscar nos dados mockados (com normalização de acentos)
-    if (!isSupabaseConfigured()) {
+    // Busca local com normalização de acentos
+    const searchLocal = () => {
       const q = normalize(termo);
-      const filtered = mockEspecies.filter(e =>
+      return mockEspecies.filter(e =>
         matchesSearch(e.nomeCientifico, q) ||
         e.nomesPopulares.some(n => matchesSearch(n, q)) ||
         (e.nomesAlternativos || []).some((n: string) => matchesSearch(n, q))
-      );
-      setResultados(filtered.slice(0, 10));
+      ).slice(0, 10);
+    };
+
+    // Modo offline
+    if (!isSupabaseConfigured()) {
+      setResultados(searchLocal());
       setIsLoading(false);
       return;
     }
@@ -295,13 +300,7 @@ export function useBuscarEspecies() {
     } catch (err) {
       console.error('Erro na busca:', err);
       // Fallback para dados mockados com normalização
-      const q = normalize(termo);
-      const filtered = mockEspecies.filter(e =>
-        matchesSearch(e.nomeCientifico, q) ||
-        e.nomesPopulares.some(n => matchesSearch(n, q)) ||
-        (e.nomesAlternativos || []).some((n: string) => matchesSearch(n, q))
-      );
-      setResultados(filtered.slice(0, 10));
+      setResultados(searchLocal());
     } finally {
       setIsLoading(false);
     }

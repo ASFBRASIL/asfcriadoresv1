@@ -22,11 +22,10 @@ export function useCriadores(options: UseCriadoresOptions = {}) {
     setIsLoading(true);
     setError(null);
 
-    // Modo offline - usar dados mockados
-    if (!isSupabaseConfigured()) {
+    // Filtra mock data localmente com todos os filtros
+    const filterMockCriadores = () => {
       let filtered = [...mockCriadores];
 
-      // Aplicar filtros nos dados mockados
       if (options.estados?.length) {
         filtered = filtered.filter(c => options.estados?.includes(c.estado));
       }
@@ -35,15 +34,26 @@ export function useCriadores(options: UseCriadoresOptions = {}) {
         filtered = filtered.filter(c => c.status.some(s => options.status?.includes(s)));
       }
 
+      if (options.especies?.length) {
+        filtered = filtered.filter(c =>
+          c.especies.some((espId: string) => options.especies?.includes(espId))
+        );
+      }
+
       if (options.query) {
         const q = options.query.toLowerCase();
-        filtered = filtered.filter(c => 
-          c.nome.toLowerCase().includes(q) || 
+        filtered = filtered.filter(c =>
+          c.nome.toLowerCase().includes(q) ||
           c.cidade.toLowerCase().includes(q)
         );
       }
 
-      setCriadores(filtered);
+      return filtered;
+    };
+
+    // Modo offline - usar dados mockados
+    if (!isSupabaseConfigured()) {
+      setCriadores(filterMockCriadores());
       setIsLoading(false);
       return;
     }
@@ -84,10 +94,9 @@ export function useCriadores(options: UseCriadoresOptions = {}) {
       if (queryError) throw queryError;
       setCriadores((data || []) as unknown as CriadorData[]);
     } catch (err) {
-      setError(err as Error);
-      console.error('Erro ao buscar criadores:', err);
-      // Fallback para dados mockados em caso de erro
-      setCriadores(mockCriadores);
+      console.error('Erro ao buscar criadores, usando dados locais:', err);
+      // Fallback para dados mockados COM filtros aplicados
+      setCriadores(filterMockCriadores());
     } finally {
       setIsLoading(false);
     }
