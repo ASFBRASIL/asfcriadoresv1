@@ -50,22 +50,55 @@ function EspecieManager({ criadorId, currentEspecies, onClose, onUpdate }: {
     }
   }, [search, allDbEspecies]);
 
-  const getEspecieId = (esp: any) => esp.id || esp.slug;
+  // Sempre usar UUID do banco. Se for slug (mock), resolver para UUID via allDbEspecies
+  const getEspecieId = (esp: any) => {
+    // Se o id parece UUID (contém hífens e tem 36 chars), usar direto
+    if (esp.id && esp.id.length === 36 && esp.id.includes('-')) return esp.id;
+    // Senão, tentar encontrar no banco pelo slug
+    if (allDbEspecies.length > 0) {
+      const found = allDbEspecies.find(e => e.slug === (esp.id || esp.slug) || e.id === esp.id);
+      if (found) return found.id;
+    }
+    return esp.id || esp.slug;
+  };
   const getEspecieNome = (esp: any) => esp.nomesPopulares?.[0] || esp.nomes_populares?.[0] || esp.nomeCientifico || esp.nome_cientifico;
 
   const toggle = (id: string) => {
     setSelected(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
   };
 
+  // Resolver slug para UUID
+  const resolveToUuid = (espId: string): string | null => {
+    // Já é UUID
+    if (espId.length === 36 && espId.includes('-')) return espId;
+    // Buscar no banco pelo slug
+    const found = allDbEspecies.find(e => e.slug === espId);
+    return found ? found.id : null;
+  };
+
   const handleSave = async () => {
     setSaving(true);
     if (isSupabaseConfigured()) {
-      // Excluir espécies antigas
-      await supabase.from('criador_especies').delete().eq('criador_id', criadorId);
-      if (selected.size > 0) {
-        const rows = Array.from(selected).map(espId => ({ criador_id: criadorId, especie_id: espId, disponivel: true }));
-        const { error } = await supabase.from('criador_especies').insert(rows);
-        if (error) console.error('Erro ao salvar espécies:', error);
+      // Resolver todos os IDs selecionados para UUIDs válidos
+      const uuids = Array.from(selected)
+        .map(id => resolveToUuid(id))
+        .filter((id): id is string => id !== null);
+
+      if (uuids.length > 0) {
+        const rows = uuids.map(espId => ({ criador_id: criadorId, especie_id: espId, disponivel: true }));
+        // Inserir primeiro para verificar se funciona
+        // Usar upsert não é possível, então: deletar e reinserir
+        const { error: delError } = await supabase.from('criador_especies').delete().eq('criador_id', criadorId);
+        if (delError) {
+          console.error('Erro ao excluir espécies antigas:', delError);
+        }
+        const { error: insError } = await supabase.from('criador_especies').insert(rows);
+        if (insError) {
+          console.error('Erro ao salvar espécies:', insError);
+        }
+      } else {
+        // Nenhuma espécie selecionada — limpar todas
+        await supabase.from('criador_especies').delete().eq('criador_id', criadorId);
       }
     }
     setSaving(false);
@@ -74,7 +107,7 @@ function EspecieManager({ criadorId, currentEspecies, onClose, onUpdate }: {
   };
 
   const findEspecie = (id: string) => {
-    return allDbEspecies.find(e => (e.id || e.slug) === id) ||
+    return allDbEspecies.find(e => e.id === id || e.slug === id) ||
            allEspeciesMock.find(e => e.id === id) ||
            currentEspecies.find(e => (e.id || e.slug) === id);
   };

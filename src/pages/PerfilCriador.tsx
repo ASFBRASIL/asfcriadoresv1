@@ -22,25 +22,70 @@ function EspecieManager({ criadorId, currentEspecies, onClose, onUpdate }: {
   const [results, setResults] = useState<any[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set(currentEspecies.map(e => e.id)));
   const [saving, setSaving] = useState(false);
+  const [allDbEspecies, setAllDbEspecies] = useState<any[]>([]);
+
+  // Carregar todas as espécies do Supabase ao abrir
+  useEffect(() => {
+    const loadAll = async () => {
+      if (isSupabaseConfigured()) {
+        const { data } = await supabase.from('especies').select('*').order('nome_cientifico');
+        if (data) setAllDbEspecies(data);
+      }
+    };
+    loadAll();
+  }, []);
 
   useEffect(() => {
     if (!search.trim()) { setResults([]); return; }
-    const found = buscarEspecies(search).slice(0, 8);
-    setResults(found);
-  }, [search]);
+    const q = search.toLowerCase();
+
+    if (isSupabaseConfigured() && allDbEspecies.length > 0) {
+      const found = allDbEspecies.filter(e =>
+        e.nome_cientifico?.toLowerCase().includes(q) ||
+        (e.nomes_populares || []).some((n: string) => n.toLowerCase().includes(q))
+      ).slice(0, 8);
+      setResults(found);
+    } else {
+      const found = buscarEspecies(search).slice(0, 8);
+      setResults(found);
+    }
+  }, [search, allDbEspecies]);
+
+  // Sempre usar UUID do banco
+  const getEspecieId = (esp: any) => {
+    if (esp.id && esp.id.length === 36 && esp.id.includes('-')) return esp.id;
+    if (allDbEspecies.length > 0) {
+      const found = allDbEspecies.find(e => e.slug === (esp.id || esp.slug) || e.id === esp.id);
+      if (found) return found.id;
+    }
+    return esp.id || esp.slug;
+  };
 
   const toggle = (id: string) => {
     setSelected(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
   };
 
+  // Resolver slug para UUID
+  const resolveToUuid = (espId: string): string | null => {
+    if (espId.length === 36 && espId.includes('-')) return espId;
+    const found = allDbEspecies.find(e => e.slug === espId);
+    return found ? found.id : null;
+  };
+
   const handleSave = async () => {
     setSaving(true);
     if (isSupabaseConfigured()) {
-      // Deletar todas e reinserir
-      await supabase.from('criador_especies').delete().eq('criador_id', criadorId);
-      if (selected.size > 0) {
-        const rows = Array.from(selected).map(espId => ({ criador_id: criadorId, especie_id: espId, disponivel: true }));
-        await supabase.from('criador_especies').insert(rows);
+      const uuids = Array.from(selected)
+        .map(id => resolveToUuid(id))
+        .filter((id): id is string => id !== null);
+
+      if (uuids.length > 0) {
+        const rows = uuids.map(espId => ({ criador_id: criadorId, especie_id: espId, disponivel: true }));
+        await supabase.from('criador_especies').delete().eq('criador_id', criadorId);
+        const { error } = await supabase.from('criador_especies').insert(rows);
+        if (error) console.error('Erro ao salvar espécies:', error);
+      } else {
+        await supabase.from('criador_especies').delete().eq('criador_id', criadorId);
       }
     }
     setSaving(false);
@@ -62,10 +107,11 @@ function EspecieManager({ criadorId, currentEspecies, onClose, onUpdate }: {
             <p className="text-sm text-[var(--asf-gray-medium)] mb-2">{selected.size} espécie(s) selecionada(s):</p>
             <div className="flex flex-wrap gap-2">
               {Array.from(selected).map(id => {
-                const esp = allEspeciesMock.find(e => e.id === id) || currentEspecies.find(e => e.id === id);
+                const esp = allDbEspecies.find(e => e.id === id || e.slug === id) || allEspeciesMock.find(e => e.id === id) || currentEspecies.find(e => e.id === id);
+                const nome = esp?.nomesPopulares?.[0] || esp?.nomes_populares?.[0] || esp?.nomeCientifico || esp?.nome_cientifico || id;
                 return esp ? (
                   <span key={id} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[var(--asf-green)]/10 text-[var(--asf-green)] text-sm">
-                    <Leaf className="w-3 h-3" />{esp.nomesPopulares?.[0] || esp.nomes_populares?.[0] || esp.nomeCientifico || esp.nome_cientifico}
+                    <Leaf className="w-3 h-3" />{nome}
                     <button onClick={() => toggle(id)} className="ml-1 hover:text-red-500"><X className="w-3 h-3" /></button>
                   </span>
                 ) : null;
@@ -85,16 +131,17 @@ function EspecieManager({ criadorId, currentEspecies, onClose, onUpdate }: {
         {results.length > 0 && (
           <div className="space-y-1 mb-4 max-h-60 overflow-y-auto">
             {results.map(esp => {
-              const isSelected = selected.has(esp.id);
+              const espId = getEspecieId(esp);
+              const isSelected = selected.has(espId);
               return (
-                <button key={esp.id} onClick={() => toggle(esp.id)}
+                <button key={espId} onClick={() => toggle(espId)}
                   className={`w-full flex items-center gap-3 p-3 rounded-xl text-left transition-colors ${isSelected ? 'bg-[var(--asf-green)]/10 border border-[var(--asf-green)]/30' : 'hover:bg-gray-50 border border-transparent'}`}>
                   <div className="w-9 h-9 rounded-lg bg-[var(--asf-green)]/10 flex items-center justify-center flex-shrink-0">
                     <Leaf className="w-4 h-4 text-[var(--asf-green)]" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm text-[var(--asf-gray-dark)] truncate">{esp.nomesPopulares[0]}</p>
-                    <p className="text-xs text-[var(--asf-gray-medium)] italic truncate">{esp.nomeCientifico}</p>
+                    <p className="font-medium text-sm text-[var(--asf-gray-dark)] truncate">{esp.nomesPopulares?.[0] || esp.nomes_populares?.[0] || esp.nome_cientifico}</p>
+                    <p className="text-xs text-[var(--asf-gray-medium)] italic truncate">{esp.nomeCientifico || esp.nome_cientifico}</p>
                   </div>
                   {isSelected && <Check className="w-5 h-5 text-[var(--asf-green)]" />}
                 </button>
