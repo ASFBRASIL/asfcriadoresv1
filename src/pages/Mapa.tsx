@@ -8,7 +8,8 @@ import { criadores as mockCriadores } from '../data/criadores';
 import { useCriadores } from '../hooks/useCriadores';
 import { useAuth } from '../contexts/AuthContext';
 import { useFavoritos } from '../hooks/useWhatsApp';
-import { especies, buscarEspecies, getTodasEspeciesParaFiltro } from '../data/especies';
+import { especies as mockEspecies, buscarEspecies } from '../data/especies';
+import { useEspecies } from '../hooks/useEspecies';
 import { useSEO } from '../hooks/useSEO';
 import 'leaflet/dist/leaflet.css';
 
@@ -85,14 +86,22 @@ export function Mapa() {
   const getDescricao = (criador: any) => criador.descricao || criador.bio || '';
   const getEspeciesList = (criador: any) => criador.especies || [];
 
-  // Search results
+  // Buscar todas as espécies do Supabase para popular o filtro
+  const { especies: todasEspeciesDB } = useEspecies({ limit: 500 });
+  const todasEspecies = useMemo(() =>
+    todasEspeciesDB.map(e => ({ id: e.id, nome: e.nomesPopulares[0], nomeCientifico: e.nomeCientifico })),
+  [todasEspeciesDB]);
+
+  // Search results - busca no conjunto completo (DB + mock fallback)
   const searchResults = useMemo(() => {
     if (!searchTerm.trim()) return [];
-    return buscarEspecies(searchTerm);
-  }, [searchTerm]);
-
-  // All species for filter
-  const todasEspecies = useMemo(() => getTodasEspeciesParaFiltro(), []);
+    const q = searchTerm.toLowerCase();
+    const source = todasEspeciesDB.length > 0 ? todasEspeciesDB : mockEspecies;
+    return source.filter(e =>
+      e.nomesPopulares.some(n => n.toLowerCase().includes(q)) ||
+      e.nomeCientifico.toLowerCase().includes(q)
+    ).slice(0, 10);
+  }, [searchTerm, todasEspeciesDB]);
 
   // Filtered creators - sempre aplicar filtros localmente
   const filteredCriadores = useMemo(() => {
@@ -163,11 +172,12 @@ export function Mapa() {
     setShowSearchDropdown(false);
   }, [selectedEspecies]);
 
-  // Get species name by ID
+  // Get species name by ID - busca no DB primeiro, depois no mock
   const getEspecieName = useCallback((id: string) => {
-    const especie = especies.find(e => e.id === id);
+    const source = todasEspeciesDB.length > 0 ? todasEspeciesDB : mockEspecies;
+    const especie = source.find(e => e.id === id);
     return especie ? especie.nomesPopulares[0] : id;
-  }, []);
+  }, [todasEspeciesDB]);
 
   // Status labels
   const statusLabels = {
