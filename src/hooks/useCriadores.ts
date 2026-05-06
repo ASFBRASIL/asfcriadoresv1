@@ -59,72 +59,34 @@ export function useCriadores(options: UseCriadoresOptions = {}) {
     }
 
     try {
-      let query = supabase.from('criadores').select('*');
+      // RPC que retorna criadores já com species_slugs agregados — 1 query só
+      const rpcArgs: Record<string, any> = {};
+      if (options.especies?.length) rpcArgs.p_especie_slugs = options.especies;
+      if (options.estados?.length) rpcArgs.p_estado = options.estados[0];
+      if (options.status?.length) rpcArgs.p_status = options.status;
 
-      // Filtro por estado
-      if (options.estados?.length) {
-        query = query.in('estado', options.estados);
-      }
+      const { data, error: rpcError } = await supabase
+        .rpc('listar_criadores_com_especies', rpcArgs);
 
-      // Filtro por status
-      if (options.status?.length) {
-        query = query.overlaps('status', options.status);
-      }
+      if (rpcError) throw rpcError;
 
-      // Busca por texto (nome, cidade)
-      if (options.query) {
-        query = query.or(`nome.ilike.%${options.query}%,cidade.ilike.%${options.query}%`);
-      }
+      // Mapear resultado: especies_slugs → especies (compatível com CriadorData)
+      const criadores = (data || []).map((row: any) => ({
+        ...row,
+        especies: row.especies_slugs || [],
+      })) as unknown as CriadorData[];
 
-      const { data, error: queryError } = await query.order('avaliacao_media', { ascending: false });
+      // Filtro extra por texto (não suportado na RPC)
+      const resultado = options.query
+        ? criadores.filter(c => {
+            const q = options.query!.toLowerCase();
+            return c.nome.toLowerCase().includes(q) || c.cidade.toLowerCase().includes(q);
+          })
+        : criadores;
 
-      if (queryError) throw queryError;
-
-      // Buscar espécies vinculadas a cada criador (tabela de junção)
-      let criadoresComEspecies = (data || []) as unknown as CriadorData[];
-      if (criadoresComEspecies.length > 0) {
-        const criadorIds = criadoresComEspecies.map(c => c.id);
-        const { data: ceData } = await supabase
-          .from('criador_especies')
-          .select('criador_id, especie_id')
-          .in('criador_id', criadorIds);
-
-        if (ceData && ceData.length > 0) {
-          // Buscar slugs para todos os especie_ids encontrados
-          const especieUuids = [...new Set(ceData.map(ce => ce.especie_id))];
-          const { data: especiesSlugData } = await supabase
-            .from('especies')
-            .select('id, slug')
-            .in('id', especieUuids);
-
-          const slugMap: Record<string, string> = {};
-          (especiesSlugData || []).forEach((e: any) => { slugMap[e.id] = e.slug; });
-
-          // Agrupar por criador usando slug como ID
-          const especiesPorCriador: Record<string, string[]> = {};
-          ceData.forEach(ce => {
-            if (!especiesPorCriador[ce.criador_id]) especiesPorCriador[ce.criador_id] = [];
-            especiesPorCriador[ce.criador_id].push(slugMap[ce.especie_id] || ce.especie_id);
-          });
-
-          criadoresComEspecies = criadoresComEspecies.map(c => ({
-            ...c,
-            especies: especiesPorCriador[c.id] || [],
-          }));
-        }
-      }
-
-      // Filtro por espécies client-side (pois criador_especies pode estar vazia)
-      if (options.especies?.length) {
-        criadoresComEspecies = criadoresComEspecies.filter(c =>
-          (c.especies || []).some((espId: string) => options.especies?.includes(espId))
-        );
-      }
-
-      setCriadores(criadoresComEspecies);
+      setCriadores(resultado);
     } catch (err) {
-      console.error('Erro ao buscar criadores, usando dados locais:', err);
-      // Fallback para dados mockados COM filtros aplicados
+      console.error('Erro ao buscar criadores via RPC, usando dados locais:', err);
       setCriadores(filterMockCriadores());
     } finally {
       setIsLoading(false);
