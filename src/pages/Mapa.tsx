@@ -8,7 +8,7 @@ import { criadores as mockCriadores } from '../data/criadores';
 import { useCriadores } from '../hooks/useCriadores';
 import { useAuth } from '../contexts/AuthContext';
 import { useFavoritos } from '../hooks/useWhatsApp';
-import { especies as mockEspecies, buscarEspecies } from '../data/especies';
+import { especies as mockEspecies } from '../data/especies';
 import { useEspecies } from '../hooks/useEspecies';
 import { useSEO } from '../hooks/useSEO';
 import 'leaflet/dist/leaflet.css';
