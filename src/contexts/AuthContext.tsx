@@ -1,0 +1,267 @@
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { supabase, type Criador, isSupabaseConfigured } from '../lib/supabase';
+import { geocodeEndereco, getEstadoCoordenadas } from '../lib/geocoding';
+import type { User, Session } from '@supabase/supabase-js';
+
+interface AuthContextType {
+  user: User | null;
+  session: Session | null;
+  criador: Criador | null;
+  isLoading: boolean;
+  isCriadorLoading: boolean;
+  isAdmin: boolean;
+  signUp: (email: string, password: string, nome: string, telefone: string, cidade?: string, estado?: string) => Promise<{ error: Error | null }>;
+  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signInWithGoogle: () => Promise<{ error: Error | null }>;
+  signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{ error: Error | null }>;
+  refreshCriador: () => Promise<void>;
+  isSupabaseReady: boolean;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Criador mockado para modo offline
+const mockCriador: Criador = {
+  id: 'mock-1',
+  user_id: 'mock-user',
+  nome: 'Criador Demo',
+  email: 'demo@asfcriadores.com',
+  telefone: '(11) 99999-9999',
+  whatsapp: '5511999999999',
+  avatar_url: undefined,
+  bio: 'Criador de abelhas sem ferrão apaixonado pela natureza.',
+  endereco: 'Rua das Flores, 123',
+  cidade: 'São Paulo',
+  estado: 'SP',
+  cep: '01000-000',
+  latitude: -23.5505,
+  longitude: -46.6333,
+  status: ['venda', 'troca', 'informacao'],
+  verificado: true,
+  avaliacao_media: 4.8,
+  total_avaliacoes: 12,
+  role: 'admin',
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+};
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [criador, setCriador] = useState<Criador | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isCriadorLoading, setIsCriadorLoading] = useState(false);
+  const [supabaseReady] = useState(isSupabaseConfigured());
+
+  // Buscar dados do criador
+  const fetchCriador = async (userId: string) => {
+    if (!supabaseReady) {
+      setCriador(mockCriador);
+      return;
+    }
+
+    setIsCriadorLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('criadores')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (error) {
+        console.log('Criador não encontrado:', error.message);
+        setCriador(null);
+      } else {
+        setCriador(data as Criador);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar criador:', error);
+      setCriador(null);
+    } finally {
+      setIsCriadorLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!supabaseReady) {
+      // Modo offline - não tentar conectar ao Supabase
+      setIsLoading(false);
+      return;
+    }
+
+    // Verificar sessão atual
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchCriador(session.user.id);
+      }
+      setIsLoading(false);
+    });
+
+    // Escutar mudanças de autenticação
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchCriador(session.user.id);
+      } else {
+        setCriador(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [supabaseReady]);
+
+  const signUp = async (email: string, password: string, nome: string, telefone: string, cidade?: string, estado?: string) => {
+    if (!supabaseReady) {
+      // Modo offline - simular sucesso
+      setUser({ id: 'mock-user', email } as User);
+      setCriador({ ...mockCriador, nome, email, telefone });
+      return { error: null };
+    }
+
+    try {
+      // O trigger handle_new_user() cria automaticamente o registro em criadores
+      // quando o auth user é criado, usando os dados do raw_user_meta_data
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          data: {
+            nome,
+            telefone,
+            cidade: cidade || '',
+            estado: estado || '',
+          },
+        },
+      });
+
+      if (authError) throw authError;
+
+      // Após confirmação do email e login, geocodificar e atualizar coordenadas
+      // Isso é feito no primeiro login via AuthCallback ou ao editar perfil
+      if (authData.user && authData.session) {
+        // Sessão já ativa (ex: email confirmation disabled) - atualizar coordenadas
+        if (cidade || estado) {
+          const geoResult = await geocodeEndereco({ cidade, estado });
+          if (geoResult) {
+            await supabase.from('criadores')
+              .update({ latitude: geoResult.latitude, longitude: geoResult.longitude })
+              .eq('user_id', authData.user.id);
+          } else if (estado) {
+            const estadoCoords = getEstadoCoordenadas(estado);
+            await supabase.from('criadores')
+              .update({ latitude: estadoCoords.latitude, longitude: estadoCoords.longitude })
+              .eq('user_id', authData.user.id);
+          }
+        }
+      }
+
+      return { error: null };
+    } catch (error) {
+      return { error: error as Error };
+    }
+  };
+
+  const signIn = async (email: string, password: string) => {
+    if (!supabaseReady) {
+      // Modo offline - simular login
+      if (email === 'demo@asfcriadores.com' && password === 'demo123') {
+        setUser({ id: 'mock-user', email } as User);
+        setCriador(mockCriador);
+        return { error: null };
+      }
+      return { error: new Error('Credenciais inválidas') };
+    }
+
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      return { error };
+    } catch (error) {
+      return { error: error as Error };
+    }
+  };
+
+  const signInWithGoogle = async () => {
+    if (!supabaseReady) {
+      alert('Login com Google disponível apenas com Supabase configurado');
+      return { error: new Error('Supabase não configurado') };
+    }
+
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      return { error };
+    } catch (error) {
+      return { error: error as Error };
+    }
+  };
+
+  const signOut = async () => {
+    if (!supabaseReady) {
+      setUser(null);
+      setCriador(null);
+      return;
+    }
+    await supabase.auth.signOut();
+    setCriador(null);
+  };
+
+  const resetPassword = async (email: string) => {
+    if (!supabaseReady) {
+      return { error: new Error('Recuperação de senha requer Supabase configurado.') };
+    }
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/entrar`,
+      });
+      return { error };
+    } catch (error) {
+      return { error: error as Error };
+    }
+  };
+
+  const refreshCriador = async () => {
+    if (user) {
+      await fetchCriador(user.id);
+    }
+  };
+
+  const isAdmin = criador?.role === 'admin' || criador?.role === 'moderador' || false;
+
+  const value: AuthContextType = {
+    user,
+    session,
+    criador,
+    isLoading,
+    isCriadorLoading,
+    isAdmin,
+    signUp,
+    signIn,
+    signInWithGoogle,
+    signOut,
+    resetPassword,
+    refreshCriador,
+    isSupabaseReady: supabaseReady,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
+  }
+  return context;
+}
