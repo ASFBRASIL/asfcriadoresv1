@@ -86,8 +86,8 @@ export function Mapa() {
   const getDescricao = (criador: any) => criador.descricao || criador.bio || '';
   const getEspeciesList = (criador: any) => criador.especies || [];
 
-  // Buscar todas as espécies do Supabase para popular o filtro
-  const { especies: todasEspeciesDB } = useEspecies({ limit: 500 });
+  // Buscar todas as espécies do Supabase para popular o filtro (sem mock inicial)
+  const { especies: todasEspeciesDB } = useEspecies({ limit: 500, initialEmpty: true });
   const todasEspecies = useMemo(() =>
     todasEspeciesDB.map(e => ({ id: e.id, nome: e.nomesPopulares[0], nomeCientifico: e.nomeCientifico })),
   [todasEspeciesDB]);

@@ -86,18 +86,27 @@ export function useCriadores(options: UseCriadoresOptions = {}) {
         const criadorIds = criadoresComEspecies.map(c => c.id);
         const { data: ceData } = await supabase
           .from('criador_especies')
-          .select('criador_id, especie_id, especie:especie_id(slug)')
+          .select('criador_id, especie_id')
           .in('criador_id', criadorIds);
 
         if (ceData && ceData.length > 0) {
-          // Agrupar espécies por criador usando slug (compatível com IDs do mock local)
+          // Buscar slugs para todos os especie_ids encontrados
+          const especieUuids = [...new Set(ceData.map(ce => ce.especie_id))];
+          const { data: especiesSlugData } = await supabase
+            .from('especies')
+            .select('id, slug')
+            .in('id', especieUuids);
+
+          const slugMap: Record<string, string> = {};
+          (especiesSlugData || []).forEach((e: any) => { slugMap[e.id] = e.slug; });
+
+          // Agrupar por criador usando slug como ID
           const especiesPorCriador: Record<string, string[]> = {};
-          ceData.forEach((ce: any) => {
+          ceData.forEach(ce => {
             if (!especiesPorCriador[ce.criador_id]) especiesPorCriador[ce.criador_id] = [];
-            const slugOrId = ce.especie?.slug || ce.especie_id;
-            especiesPorCriador[ce.criador_id].push(slugOrId);
+            especiesPorCriador[ce.criador_id].push(slugMap[ce.especie_id] || ce.especie_id);
           });
-          // Adicionar campo especies em cada criador
+
           criadoresComEspecies = criadoresComEspecies.map(c => ({
             ...c,
             especies: especiesPorCriador[c.id] || [],

@@ -22,6 +22,7 @@ interface UseEspeciesOptions {
   query?: string;
   limit?: number;
   offset?: number;
+  initialEmpty?: boolean; // não usar mock como estado inicial (ex: filtros do mapa)
 }
 
 // Filtra dados mockados localmente com todos os filtros e busca
@@ -73,8 +74,9 @@ function filterMockEspecies(
 }
 
 export function useEspecies(options: UseEspeciesOptions = {}) {
-  const [especies, setEspecies] = useState(mockEspecies);
-  const [totalCatalogadas, setTotalCatalogadas] = useState(mockEspecies.length);
+  const initial = options.initialEmpty ? [] : mockEspecies;
+  const [especies, setEspecies] = useState(initial);
+  const [totalCatalogadas, setTotalCatalogadas] = useState(initial.length);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
