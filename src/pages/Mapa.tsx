@@ -87,7 +87,7 @@ export function Mapa() {
   const getEspeciesList = (criador: any) => criador.especies || [];
 
   // Buscar todas as espécies do Supabase para popular o filtro (sem mock inicial)
-  const { especies: todasEspeciesDB } = useEspecies({ limit: 500, initialEmpty: true });
+  const { especies: todasEspeciesDB, isLoading: isLoadingEspecies } = useEspecies({ limit: 500, initialEmpty: true });
   const todasEspecies = useMemo(() =>
     todasEspeciesDB.map(e => ({ id: e.id, nome: e.nomesPopulares[0], nomeCientifico: e.nomeCientifico })),
   [todasEspeciesDB]);
@@ -343,9 +343,15 @@ export function Mapa() {
                 {/* Species Filter */}
                 <div>
                   <h4 className="text-sm font-medium text-[var(--asf-gray-dark)] mb-2">
-                    Espécies ({todasEspecies.length})
+                    Espécies {isLoadingEspecies ? '(carregando...)' : `(${todasEspecies.length})`}
                   </h4>
                   <div className="max-h-40 overflow-y-auto space-y-1">
+                    {isLoadingEspecies && todasEspecies.length === 0 && (
+                      <div className="flex items-center gap-2 px-3 py-2 text-sm text-[var(--asf-gray-medium)]">
+                        <div className="w-4 h-4 border-2 border-[var(--asf-green)] border-t-transparent rounded-full animate-spin" />
+                        Carregando espécies...
+                      </div>
+                    )}
                     {todasEspecies.map((esp) => (
                       <button
                         key={esp.id}
