@@ -58,4 +58,15 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          leaflet: ['leaflet', 'react-leaflet'],
+          motion: ['framer-motion'],
+          supabase: ['@supabase/supabase-js'],
+        },
+      },
+    },
+  },
 });

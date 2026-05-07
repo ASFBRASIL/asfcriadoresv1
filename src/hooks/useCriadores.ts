@@ -235,11 +235,9 @@ export function useUpdateCriador() {
 
 export function useUploadAvatar() {
   const [isLoading, setIsLoading] = useState(false);
-  const [progress, setProgress] = useState(0);
 
   const uploadAvatar = async (file: File, userId: string): Promise<string | null> => {
     setIsLoading(true);
-    setProgress(0);
 
     // Modo offline - retornar URL simulada
     if (!isSupabaseConfigured()) {
@@ -275,5 +273,5 @@ export function useUploadAvatar() {
     }
   };
 
-  return { uploadAvatar, isLoading, progress };
+  return { uploadAvatar, isLoading };
 }

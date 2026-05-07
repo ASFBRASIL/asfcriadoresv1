@@ -1,22 +1,8 @@
 import { useState, useCallback } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
-interface WhatsAppMessage {
-  phone: string;
-  message: string;
-}
-
-interface WhatsAppAPIResponse {
-  success: boolean;
-  messageId?: string;
-  error?: string;
-}
-
 // Hook para integração com WhatsApp
 export function useWhatsApp() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
   // Abrir WhatsApp Web/App com mensagem pré-preenchida
   const abrirWhatsApp = (phone: string, message?: string, opts?: { remetenteId?: string; destinatarioId?: string }) => {
     // Remover caracteres não numéricos
@@ -74,46 +60,6 @@ export function useWhatsApp() {
     }
   };
 
-  // Enviar mensagem via API (requer configuração de provedor)
-  const enviarMensagemAPI = async (
-    _message: WhatsAppMessage
-  ): Promise<WhatsAppAPIResponse> => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // Aqui você integraria com uma API real como:
-      // - Twilio WhatsApp API
-      // - Meta Business API
-      // - WPPConnect
-      // - Evolution API
-
-      // Exemplo com Twilio (requer configuração no backend):
-      // const response = await fetch('/api/whatsapp/send', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(message),
-      // });
-
-      // Simulação de sucesso
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      return {
-        success: true,
-        messageId: `msg_${Date.now()}`,
-      };
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Erro ao enviar mensagem';
-      setError(errorMsg);
-      return {
-        success: false,
-        error: errorMsg,
-      };
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   // Compartilhar perfil do criador
   const compartilharPerfil = (criador: {
     nome: string;
@@ -142,10 +88,7 @@ export function useWhatsApp() {
   return {
     abrirWhatsApp,
     getMensagemTemplate,
-    enviarMensagemAPI,
     compartilharPerfil,
-    isLoading,
-    error,
   };
 }
 

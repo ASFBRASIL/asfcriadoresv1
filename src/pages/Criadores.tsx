@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Search, MapPin, Star, Filter, ChevronDown, Check, X,
@@ -6,10 +6,9 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useFavoritos } from '../hooks/useWhatsApp';
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import { criadores as mockCriadores } from '../data/criadores';
+import { useCriadores } from '../hooks/useCriadores';
+import { useEspecies } from '../hooks/useEspecies';
 import { estados } from '../data/estados';
-import { getTodasEspeciesParaFiltro } from '../data/especies';
 import { useSEO } from '../hooks/useSEO';
 import { usePagination, PaginationControls } from '../hooks/usePagination';
 import { Skeleton } from '../components/ui/skeleton';
@@ -19,111 +18,55 @@ export function Criadores() {
   const { isFavorito, adicionarFavorito, removerFavorito, carregarFavoritos } = useFavoritos();
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedEstados, setSelectedEstados] = useState<string[]>([]);
   const [selectedEspecies, setSelectedEspecies] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
-  const [criadores, setCriadores] = useState<any[]>([]);
   const [totalCriadores, setTotalCriadores] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
 
   useSEO({
     title: 'Criadores de Abelhas Sem Ferrão',
     description: 'Conheça os criadores de abelhas sem ferrão cadastrados na plataforma ASF Criadores. Encontre meliponicultores perto de você.',
   });
 
-  const todasEspecies = getTodasEspeciesParaFiltro();
+  // Debounce da busca por texto
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchTerm), 200);
+    return () => clearTimeout(t);
+  }, [searchTerm]);
 
   // Carregar favoritos
   useEffect(() => {
     if (user?.id) carregarFavoritos(user.id);
   }, [user?.id, carregarFavoritos]);
 
-  // Buscar criadores
+  // Buscar criadores via hook (RPC server-side: espécies, query, estado)
+  // Quando múltiplos estados: passa undefined para RPC e filtra client-side
+  const { criadores: rawCriadores, isLoading } = useCriadores({
+    query: debouncedSearch || undefined,
+    estados: selectedEstados.length === 1 ? selectedEstados : undefined,
+    especies: selectedEspecies.length > 0 ? selectedEspecies : undefined,
+  });
+
+  // Filtro client-side de estados quando múltiplos selecionados
+  const criadores = useMemo(() =>
+    selectedEstados.length > 1
+      ? rawCriadores.filter(c => selectedEstados.includes(c.estado))
+      : rawCriadores,
+  [rawCriadores, selectedEstados]);
+
+  // Atualizar total cadastrado quando sem filtros
   useEffect(() => {
-    let cancelled = false;
-
-    const fetchCriadores = async () => {
-      setIsLoading(true);
-
-      if (!isSupabaseConfigured()) {
-        let filtered = [...mockCriadores];
-        if (searchTerm.trim()) {
-          const q = searchTerm.toLowerCase();
-          filtered = filtered.filter(c =>
-            c.nome.toLowerCase().includes(q) || c.cidade.toLowerCase().includes(q)
-          );
-        }
-        if (selectedEstados.length > 0) {
-          filtered = filtered.filter(c => selectedEstados.includes(c.estado));
-        }
-        if (!cancelled) {
-          setCriadores(filtered);
-          setTotalCriadores(mockCriadores.length);
-          setIsLoading(false);
-        }
-        return;
-      }
-
-      try {
-        let query = supabase.from('criadores').select('*');
-
-        if (searchTerm.trim()) {
-          query = query.or(`nome.ilike.%${searchTerm}%,cidade.ilike.%${searchTerm}%`);
-        }
-        if (selectedEstados.length > 0) {
-          query = query.in('estado', selectedEstados);
-        }
-
-        const { data, error } = await query.order('avaliacao_media', { ascending: false });
-
-        if (error) throw error;
-
-        if (!cancelled) {
-          let result = data || [];
-
-          // Filtro por espécies requer subquery
-          if (selectedEspecies.length > 0) {
-            const { data: ceData } = await supabase
-              .from('criador_especies')
-              .select('criador_id')
-              .in('especie_id', selectedEspecies);
-            if (ceData) {
-              const ids = new Set(ceData.map(ce => ce.criador_id));
-              result = result.filter(c => ids.has(c.id));
-            }
-          }
-
-          setCriadores(result);
-          // Total sem filtros
-          if (!searchTerm && selectedEstados.length === 0 && selectedEspecies.length === 0) {
-            setTotalCriadores(result.length);
-          }
-        }
-      } catch (err) {
-        console.error('Erro ao buscar criadores:', err);
-        if (!cancelled) {
-          setCriadores(mockCriadores);
-          setTotalCriadores(mockCriadores.length);
-        }
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    };
-
-    const timer = setTimeout(fetchCriadores, 200);
-    return () => { cancelled = true; clearTimeout(timer); };
-  }, [searchTerm, selectedEstados, selectedEspecies]);
-
-  // Fetch total on mount
-  useEffect(() => {
-    if (!isSupabaseConfigured()) {
-      setTotalCriadores(mockCriadores.length);
-      return;
+    if (!isLoading && !debouncedSearch && selectedEstados.length === 0 && selectedEspecies.length === 0) {
+      if (criadores.length > 0) setTotalCriadores(criadores.length);
     }
-    supabase.from('criadores').select('*', { count: 'exact', head: true }).then(({ count }) => {
-      if (count !== null) setTotalCriadores(count);
-    });
-  }, []);
+  }, [isLoading, criadores.length, debouncedSearch, selectedEstados.length, selectedEspecies.length]);
+
+  // Buscar todas as espécies do banco para o painel de filtros (IDs corretos do DB)
+  const { especies: todasEspeciesDB } = useEspecies({ limit: 500, initialEmpty: true });
+  const todasEspecies = useMemo(() =>
+    todasEspeciesDB.map(e => ({ id: e.id, nome: e.nomesPopulares[0], nomeCientifico: e.nomeCientifico })),
+  [todasEspeciesDB]);
 
   const toggleEstado = (sigla: string) => {
     setSelectedEstados(prev =>
@@ -171,7 +114,7 @@ export function Criadores() {
             </div>
             <div className="flex gap-6">
               <div className="text-center">
-                <div className="text-3xl font-bold">{totalCriadores}</div>
+                <div className="text-3xl font-bold">{totalCriadores || criadores.length}</div>
                 <div className="text-white/70 text-sm">criadores cadastrados</div>
               </div>
               <div className="text-center">
@@ -278,7 +221,9 @@ export function Criadores() {
 
                 {/* Espécies */}
                 <div>
-                  <h4 className="text-sm font-medium text-[var(--asf-gray-dark)] mb-2">Espécies</h4>
+                  <h4 className="text-sm font-medium text-[var(--asf-gray-dark)] mb-2">
+                    Espécies {todasEspecies.length > 0 ? `(${todasEspecies.length})` : '(carregando...)'}
+                  </h4>
                   <div className="max-h-48 overflow-y-auto space-y-1 pr-2">
                     {todasEspecies.map(esp => (
                       <button key={esp.id} onClick={() => toggleEspecie(esp.id)}

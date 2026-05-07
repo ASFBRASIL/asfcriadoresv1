@@ -3,8 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import { Icon, LatLngBounds } from 'leaflet';
 import { Search, Filter, X, MapPin, Phone, Star, ChevronDown, Check, Heart, User } from 'lucide-react';
-import { criadores as mockCriadores } from '../data/criadores';
-// supabase import removido - filtros agora são sempre client-side
+// Criadores vêm do hook useCriadores com filtro server-side via RPC
 import { useCriadores } from '../hooks/useCriadores';
 import { useAuth } from '../contexts/AuthContext';
 import { useFavoritos } from '../hooks/useWhatsApp';
@@ -61,14 +60,11 @@ export function Mapa() {
     if (user?.id) carregarFavoritos(user.id);
   }, [user?.id, carregarFavoritos]);
 
-  // Buscar criadores via hook (usa Supabase se configurado, senão mock)
-  const { criadores: criadoresData, isLoading } = useCriadores({
+  // Buscar criadores via hook (filtro server-side por espécie e status via RPC)
+  const { criadores } = useCriadores({
     especies: selectedEspecies.length > 0 ? selectedEspecies : undefined,
     status: selectedStatus.length > 0 ? selectedStatus : undefined,
   });
-
-  // Usar dados do hook ou fallback para mock
-  const criadores = criadoresData.length > 0 || isLoading ? criadoresData : mockCriadores;
 
   // Helpers para acessar dados de localização (compatível com mock e Supabase)
   const getCidade = (criador: any) => criador.localizacao?.cidade || criador.cidade || '';
@@ -102,30 +98,6 @@ export function Mapa() {
       e.nomeCientifico.toLowerCase().includes(q)
     ).slice(0, 10);
   }, [searchTerm, todasEspeciesDB]);
-
-  // Filtered creators - sempre aplicar filtros localmente
-  const filteredCriadores = useMemo(() => {
-    return criadores.filter(criador => {
-      // Filter by species
-      if (selectedEspecies.length > 0) {
-        const especiesList = getEspeciesList(criador);
-        const hasMatchingSpecies = especiesList.some((espId: string) =>
-          selectedEspecies.includes(espId)
-        );
-        if (!hasMatchingSpecies) return false;
-      }
-
-      // Filter by status
-      if (selectedStatus.length > 0) {
-        const hasMatchingStatus = criador.status.some((st: string) =>
-          selectedStatus.includes(st as any)
-        );
-        if (!hasMatchingStatus) return false;
-      }
-
-      return true;
-    });
-  }, [criadores, selectedEspecies, selectedStatus]);
 
   // Handle click outside search
   useEffect(() => {
@@ -210,7 +182,7 @@ export function Mapa() {
             <div className="flex items-center gap-3">
               <div className="text-right hidden sm:block">
                 <div className="text-2xl font-bold text-[var(--asf-green)]">
-                  {filteredCriadores.length}
+                  {criadores.length}
                 </div>
                 <div className="text-xs text-[var(--asf-gray-medium)]">criadores ativos</div>
               </div>
@@ -418,9 +390,9 @@ export function Mapa() {
 
           {/* Creators List */}
           <div className="flex-1 overflow-y-auto">
-            {filteredCriadores.length > 0 ? (
+            {criadores.length > 0 ? (
               <div className="divide-y divide-gray-100">
-                {filteredCriadores.map((criador) => (
+                {criadores.map((criador) => (
                   <div key={criador.id} className="p-4 hover:bg-gray-50 transition-colors duration-200">
                     <Link to={`/perfil/${criador.id}`} className="flex items-start gap-3 group">
                       <div className="w-12 h-12 rounded-full bg-[var(--asf-green)]/10 flex items-center justify-center flex-shrink-0">
@@ -546,7 +518,7 @@ export function Mapa() {
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
             <MapBounds />
-            {filteredCriadores.map((criador) => (
+            {criadores.map((criador) => (
               <Marker
                 key={criador.id}
                 position={[getLatitude(criador), getLongitude(criador)]}
