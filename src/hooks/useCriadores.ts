@@ -62,7 +62,7 @@ export function useCriadores(options: UseCriadoresOptions = {}) {
       // RPC que retorna criadores já com species_slugs agregados — 1 query só
       const rpcArgs: Record<string, any> = {};
       if (options.especies?.length) rpcArgs.p_especie_slugs = options.especies;
-      if (options.estados?.length) rpcArgs.p_estado = options.estados[0];
+      if (options.estados?.length) rpcArgs.p_estados = options.estados; // array nativo
       if (options.status?.length) rpcArgs.p_status = options.status;
 
       const { data, error: rpcError } = await supabase

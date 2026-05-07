@@ -1,4 +1,5 @@
 import { lazy, Suspense } from 'react';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from 'next-themes';
 import { AuthProvider } from './contexts/AuthContext';
@@ -44,6 +45,7 @@ function App() {
           <div className="min-h-screen flex flex-col">
             <Header />
             <main className="flex-1">
+              <ErrorBoundary>
               <Suspense fallback={<PageLoader />}>
                 <Routes>
                   <Route path="/" element={<Home />} />
@@ -79,6 +81,7 @@ function App() {
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>
+              </ErrorBoundary>
             </main>
             <Footer />
           </div>

@@ -65,7 +65,7 @@ export function SouCriador() {
     setIsSubmitting(true);
     setErrorMsg('');
 
-    const { error } = await signUp(formData.email, formData.password, formData.nome, formData.telefone, formData.cidade, formData.estado);
+    const { error } = await signUp(formData.email, formData.password, formData.nome, formData.telefone, formData.cidade, formData.estado, formData.bio);
 
     if (error) {
       setErrorMsg(error.message || 'Erro ao criar conta. Tente novamente.');
@@ -180,6 +180,16 @@ export function SouCriador() {
                         {estados.map(uf => <option key={uf.sigla} value={uf.sigla}>{uf.nome}</option>)}
                       </select>
                     </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--asf-gray-dark)] mb-1.5">Sobre você <span className="text-[var(--asf-gray-medium)] font-normal">(opcional)</span></label>
+                    <textarea
+                      value={formData.bio}
+                      onChange={e => setFormData({ ...formData, bio: e.target.value })}
+                      className={inputClass}
+                      rows={3}
+                      placeholder="Conte brevemente sobre seu trabalho com meliponicultura..."
+                    />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-[var(--asf-gray-dark)] mb-1.5">Senha *</label>

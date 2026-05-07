@@ -10,7 +10,7 @@ interface AuthContextType {
   isLoading: boolean;
   isCriadorLoading: boolean;
   isAdmin: boolean;
-  signUp: (email: string, password: string, nome: string, telefone: string, cidade?: string, estado?: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, nome: string, telefone: string, cidade?: string, estado?: string, bio?: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -114,7 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, [supabaseReady]);
 
-  const signUp = async (email: string, password: string, nome: string, telefone: string, cidade?: string, estado?: string) => {
+  const signUp = async (email: string, password: string, nome: string, telefone: string, cidade?: string, estado?: string, bio?: string) => {
     if (!supabaseReady) {
       // Modo offline - simular sucesso
       setUser({ id: 'mock-user', email } as User);
@@ -135,6 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             telefone,
             cidade: cidade || '',
             estado: estado || '',
+            bio: bio || '',
           },
         },
       });

@@ -40,20 +40,12 @@ export function Criadores() {
     if (user?.id) carregarFavoritos(user.id);
   }, [user?.id, carregarFavoritos]);
 
-  // Buscar criadores via hook (RPC server-side: espécies, query, estado)
-  // Quando múltiplos estados: passa undefined para RPC e filtra client-side
-  const { criadores: rawCriadores, isLoading } = useCriadores({
+  // Buscar criadores via hook (RPC server-side: espécies, query, múltiplos estados)
+  const { criadores, isLoading } = useCriadores({
     query: debouncedSearch || undefined,
-    estados: selectedEstados.length === 1 ? selectedEstados : undefined,
+    estados: selectedEstados.length > 0 ? selectedEstados : undefined,
     especies: selectedEspecies.length > 0 ? selectedEspecies : undefined,
   });
-
-  // Filtro client-side de estados quando múltiplos selecionados
-  const criadores = useMemo(() =>
-    selectedEstados.length > 1
-      ? rawCriadores.filter(c => selectedEstados.includes(c.estado))
-      : rawCriadores,
-  [rawCriadores, selectedEstados]);
 
   // Atualizar total cadastrado quando sem filtros
   useEffect(() => {
